@@ -1,0 +1,12 @@
+# Ignore internal documentation
+internal-docs/
+**/internal-docs/
+
+# Specific internal documents that should never be committed
+developer-experience-integration-guide.md
+product-requirements-user-experience-guide.md
+technical-blueprint-architecture-guide.md
+vibing-docs-plan.md
+
+# Mintlify specific
+.mintlify/ 

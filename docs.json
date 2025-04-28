@@ -17,8 +17,7 @@
             "group": "Introduction",
             "pages": [
               "introduction",
-              "core-principles",
-              "technical-blueprint-architecture-guide"
+              "core-principles"
             ]
           },
           {
@@ -52,8 +51,7 @@
             "group": "SDK Documentation",
             "pages": [
               "developer-guides/sdk-overview",
-              "developer-guides/installation-setup",
-              "developer-experience-integration-guide"
+              "developer-guides/installation-setup"
             ]
           },
           {
