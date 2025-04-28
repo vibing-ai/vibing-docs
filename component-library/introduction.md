@@ -1,172 +1,140 @@
+# Vibing AI Component Library (Block Kit)
+
+Welcome to the Vibing AI Component Library (Block Kit) — a comprehensive, composable UI/UX toolkit for building rich, accessible, and consistent AI-powered applications, agents, and plugins on the Vibing AI platform.
+
 ---
-title: 'Component Library Introduction'
-description: 'Overview of the Vibing AI Block Kit component library'
+
+## Overview
+
+Vibing AI Block Kit provides a wide range of reusable, fully-typed React components and layout primitives, with built-in theming and accessibility. It is designed for rapid development of AI interfaces, supporting both light and dark modes, custom themes, and WCAG 2.1 AA accessibility.
+
 ---
 
-# Vibing AI Block Kit
+## Block Kit Components
 
-The Vibing AI Block Kit is a comprehensive component library that provides a consistent design system for building interfaces within the Vibing AI platform. This library enables developers to create visually appealing and functionally robust applications that integrate seamlessly with the platform.
+### Text Blocks
+- **TextBlock**: Rich text content
+- **MarkdownBlock**: Markdown with syntax highlighting
+- **HeadingBlock**: Headings (various levels)
 
-## Purpose and Benefits
+### Media Blocks
+- **ImageBlock**: Images with captions/zoom
+- **VideoBlock**: Embedded video
+- **AudioBlock**: Embedded audio
+- **FileBlock**: File attachments
 
-The Block Kit is designed to:
+### Interactive Blocks
+- **InputBlock**: Text input with validation
+- **FormBlock**: Multi-field forms
+- **SliderBlock**: Range selection
+- **CheckboxBlock**: Binary selection
+- **RadioBlock**: Single selection
+- **ButtonBlock**: Customizable buttons
 
-- **Ensure Consistency**: Maintain a unified look and feel across the platform
-- **Accelerate Development**: Provide ready-made components for common interface needs
-- **Support Accessibility**: Ensure all components meet accessibility standards
-- **Enable Theming**: Allow components to adapt to user-selected themes
-- **Simplify Maintenance**: Centralize UI logic for easier updates and improvements
+### AI Blocks
+- **AIChatBlock**: Conversational chat interface
+- **AICompletionBlock**: Text completion with streaming
+- **AIControlBlock**: AI parameter controls (temperature, model, etc.)
 
-## Core Principles
+### Data Blocks
+- **TableBlock**: Tabular data
+- **ChartBlock**: Charts (various types)
+- **DataGridBlock**: Advanced grid with editing
+- **ListBlock**: Ordered/unordered lists
+- **TreeBlock**: Hierarchical data
 
-### 1. Composability
+### Code Blocks
+- **CodeBlock**: Syntax-highlighted code
+- **CodeEditorBlock**: Editable code
+- **TerminalBlock**: Terminal/console output
 
-Components are designed to work together, allowing developers to combine them in various ways to build complex interfaces from simple building blocks.
+### Embed Blocks
+- **IframeBlock**: External web content
+- **TwitterBlock**: Twitter embeds
+- **YouTubeBlock**: YouTube embeds
+- **MapBlock**: Interactive maps
 
-### 2. Accessibility
+### Connector Blocks
+- **FlowBlock**: Visual workflow connections
+- **LinkBlock**: Hyperlinks
+- **ReferenceBlock**: Reference by ID
 
-All components adhere to WCAG 2.1 AA standards, ensuring that applications built with Block Kit are usable by everyone, including people with disabilities.
+---
 
-### 3. Responsiveness
+## Layout & Surface Components
 
-Components automatically adapt to different screen sizes and device types, providing a consistent experience across desktop, tablet, and mobile.
+### Surfaces
+- **Surface**: Base container
+- **BlockContainer**: Consistent block styling
+- **ContextPanel**: Side panel
+- **Modal**: Dialog/modal
+- **ToolPalette**: Floating toolbar
+- **Widget**: Dashboard widget
+- **ConversationCard**: Conversational UI card
+- **NotificationSurface**: Notifications
+- **CommandSurface**: Command palette
+- **CanvasElement**: Draggable/resizable surface
 
-### 4. Themeable
+### Composition & Views
+- **DocumentView**: Linear document layout
+- **BoardView**: Kanban board
+- **GalleryView**: Grid gallery
+- **MindMapView**: Mind map
+- **TimelineView**: Timeline visualization
 
-The design system supports customization through themes, allowing components to adapt to light/dark modes and custom color schemes.
+### Containers
+- **BlockGroup**: Group related blocks
+- **BlockStack**: Vertical/horizontal stack
+- **BlockGrid**: Responsive grid
+- **BlockSplitView**: Adjustable split view
 
-### 5. Performance
+### Low-level UI Components
+- **Text**: Basic text
+- **Button**: Button element
+- **ScrollArea**: Custom scrollbars
+- **Avatar**: User/entity avatar
+- **Card**: Card container
+- **Checkbox**: Checkbox
+- **Radio**: Radio button
+- **Select**: Dropdown
+- **Tabs**: Tabbed interface
+- **Tooltip**: Hover hints
 
-Components are optimized for performance, with minimal bundle size and efficient rendering to ensure a smooth user experience.
+---
 
-## Getting Started
+## Theming
 
-### Installation
+- **Theme Provider**: Use `BlockKitProvider` to set light, dark, or custom themes.
+- **Custom Themes**: Use `createCustomTheme` for brand or product-specific styles.
+- **Component Theming**: Override styles via the `style` prop.
+- **HeroUI**: All components use HeroUI for consistent, accessible design tokens.
 
-Add the Block Kit to your project:
-
-```bash
-npm install @vibing-ai/block-kit
-```
-
-### Basic Usage
-
-Import and use components in your application:
-
+**Example:**
 ```jsx
-import { Card, Text, Button } from '@vibing-ai/block-kit';
-
-function MyComponent() {
-  return (
-    <Card>
-      <Text variant="heading">Hello World</Text>
-      <Text>This is a simple card component.</Text>
-      <Button variant="primary" onClick={() => alert('Clicked!')}>
-        Click Me
-      </Button>
-    </Card>
-  );
-}
+<BlockKitProvider theme="dark">...</BlockKitProvider>
 ```
 
-### Theming
+---
 
-Apply themes to your components:
+## Accessibility
 
-```jsx
-import { ThemeProvider } from '@vibing-ai/block-kit/theme';
-import { darkTheme } from '@vibing-ai/block-kit/themes';
+Block Kit is built to WCAG 2.1 AA standards:
+- **Keyboard Navigation**: Tab, Enter/Space, Escape, Arrow keys
+- **Screen Reader Support**: ARIA roles/labels, live regions
+- **Focus Management**: Trapping, restoration, visible indicators
+- **Color Contrast**: 4.5:1 for text, 3:1 for UI controls
+- **Modal Accessibility**: `aria-modal`, `aria-labelledby`, focus trapping
+- **Utilities**: `getAccessibleColor` for color contrast
+- **Testing**: Use `a11yCheck` from the SDK for automated accessibility tests
 
-function App() {
-  return (
-    <ThemeProvider theme={darkTheme}>
-      <MyComponent />
-    </ThemeProvider>
-  );
-}
-```
+---
 
-## Component Categories
+## Usage
 
-The Block Kit is organized into several categories:
+- **Install**: `npm install @vibing-ai/block-kit`
+- **Wrap your app**: `<BlockKitProvider theme="light|dark|custom">...</BlockKitProvider>`
+- **Import components**: `import { TextBlock, AIChatBlock, ... } from '@vibing-ai/block-kit'`
 
-### Basic Components
+---
 
-These are the fundamental building blocks:
-
-- [Text](/component-library/basic/text): Typography components for various text styles
-- [Button](/component-library/basic/button): Interactive buttons in multiple styles
-- [Icon](/component-library/basic/icon): Consistent iconography system
-- [Avatar](/component-library/basic/avatar): User and entity avatars
-
-### Layout Components
-
-Components for structuring your interface:
-
-- [Card](/component-library/layout/card): Container for grouping related content
-- [Stack](/component-library/layout/stack): Vertical or horizontal arrangement of elements
-- [Grid](/component-library/layout/grid): Two-dimensional layout system
-- [Divider](/component-library/layout/divider): Visual separation between content
-
-### Form Components
-
-Components for user input:
-
-- [Input](/component-library/form/input): Text entry fields
-- [Checkbox](/component-library/form/checkbox): Binary selection controls
-- [RadioGroup](/component-library/form/radio-group): Exclusive selection among options
-- [Select](/component-library/form/select): Dropdown selection interface
-- [Toggle](/component-library/form/toggle): On/off switch control
-
-### Interactive Components
-
-More complex interactive elements:
-
-- [Modal](/component-library/interactive/modal): Overlay dialogs
-- [Tabs](/component-library/interactive/tabs): Tabbed interface for content organization
-- [Dropdown](/component-library/interactive/dropdown): Expandable menus
-- [Tooltip](/component-library/interactive/tooltip): Contextual information on hover
-
-### Data Display
-
-Components for showing data:
-
-- [Table](/component-library/data/table): Tabular data presentation
-- [List](/component-library/data/list): Vertical lists of items
-- [Timeline](/component-library/data/timeline): Chronological displays
-- [Progress](/component-library/data/progress): Progress indicators
-
-### Specialized Components
-
-Components for specific platform features:
-
-- [Conversation](/component-library/specialized/conversation): Message-based interfaces
-- [Memory](/component-library/specialized/memory): Memory item displays
-- [Canvas](/component-library/specialized/canvas): Interactive workspace components
-- [Agent](/component-library/specialized/agent): Components for agent interactions
-
-## Utility Functions
-
-The Block Kit also provides utility functions:
-
-- **Spacing**: Consistent spacing scale
-- **Typography**: Font size and style helpers
-- **Colors**: Color palette access
-- **Breakpoints**: Responsive design helpers
-- **Animations**: Standard animation presets
-
-## Browser Support
-
-The Block Kit supports all modern browsers:
-
-- Chrome (latest 2 versions)
-- Firefox (latest 2 versions)
-- Safari (latest 2 versions)
-- Edge (latest 2 versions)
-
-## Next Steps
-
-- [Layout Components](/component-library/layout/overview) - Learn about structural components
-- [Form Components](/component-library/form/overview) - Explore user input components
-- [Theming Guide](/component-library/guides/theming) - Create custom themes
-- [Accessibility](/component-library/guides/accessibility) - Ensure your interfaces are accessible 
+For detailed API and usage examples, see the [Block Kit documentation](https://docs.vibing.im/block-kit). 

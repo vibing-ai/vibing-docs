@@ -3,7 +3,7 @@ title: 'Unified Memory System'
 description: 'How Vibing AI stores, manages, and retrieves contextual information across applications'
 ---
 
-# Unified Memory System
+# Introduction
 
 The **Unified Memory System** is a core component of Vibing AI that provides persistent storage and cross-application context awareness. It enables applications to share information while maintaining strict privacy controls and purpose-bound permissions.
 

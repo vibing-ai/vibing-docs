@@ -122,13 +122,13 @@
     "links": [
       {
         "label": "Support",
-        "href": "mailto:support@vibing.ai"
+        "href": "mailto:support@vibing.im"
       }
     ],
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://app.vibing.ai"
+      "href": "https://app.vibing.im"
     }
   },
   "footer": {

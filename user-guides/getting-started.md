@@ -9,7 +9,7 @@ Welcome to Vibing AI! This guide will help you get familiar with the platform an
 
 ## Creating Your Account
 
-1. **Sign Up**: Visit [app.vibing.ai](https://app.vibing.ai) and click "Sign Up"
+1. **Sign Up**: Visit [app.vibing.im](https://app.vibing.im) and click "Sign Up"
 2. **Verification**: Verify your email address by clicking the link sent to your inbox
 3. **Profile Setup**: Complete your profile by adding your name, profile picture, and preferences
 

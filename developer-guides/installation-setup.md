@@ -238,7 +238,7 @@ If you encounter issues:
 1. Check the [documentation](https://docs.vibing.im)
 2. Join our [Discord community](https://discord.gg/vibing-ai)
 3. Open an issue on [GitHub](https://github.com/vibing-ai)
-4. Contact support at [support@vibing.ai](mailto:support@vibing.ai)
+4. Contact support at [support@vibing.im](mailto:support@vibing.im)
 
 ## Next Steps
 
