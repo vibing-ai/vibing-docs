@@ -11,25 +11,57 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Get Started",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "Introduction",
             "pages": [
               "introduction",
-              "quickstart",
-              "development"
+              "core-principles",
+              "technical-blueprint-architecture-guide"
             ]
           },
           {
-            "group": "Essentials",
+            "group": "Getting Started",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/settings",
-              "essentials/navigation",
-              "essentials/reusable-snippets"
+              "quickstart",
+              "development"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Key Concepts",
+        "groups": [
+          {
+            "group": "Platform Fundamentals",
+            "pages": [
+              "key-concepts/unified-memory-system",
+              "key-concepts/vibing-super-agent",
+              "key-concepts/interface-surfaces",
+              "key-concepts/permission-model",
+              "key-concepts/offering-types"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Developer Guides",
+        "groups": [
+          {
+            "group": "SDK Documentation",
+            "pages": [
+              "developer-guides/sdk-overview",
+              "developer-guides/installation-setup",
+              "developer-experience-integration-guide"
+            ]
+          },
+          {
+            "group": "Development",
+            "pages": [
+              "developer-guides/app-development",
+              "developer-guides/plugin-development",
+              "developer-guides/agent-development"
             ]
           }
         ]
@@ -40,7 +72,8 @@
           {
             "group": "API Documentation",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/introduction",
+              "api-reference/authentication"
             ]
           },
           {
@@ -58,26 +91,21 @@
     "global": {
       "anchors": [
         {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
+          "anchor": "GitHub",
+          "href": "https://github.com/vibing-ai",
+          "icon": "github"
         },
         {
-          "anchor": "Community",
-          "href": "https://mintlify.com/community",
-          "icon": "slack"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
+          "anchor": "Main Website",
+          "href": "https://vibing.im",
+          "icon": "globe"
         }
       ]
     }
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/vibing-ai-logo.svg",
+    "dark": "/logo/vibing-ai-logo.svg"
   },
   "navbar": {
     "links": [
