@@ -3,8 +3,6 @@ title: 'Installation & Setup'
 description: 'Get started with the Vibing AI development environment'
 ---
 
-# Installation & Setup
-
 This guide walks you through setting up your development environment for building on the Vibing AI platform.
 
 ## Prerequisites

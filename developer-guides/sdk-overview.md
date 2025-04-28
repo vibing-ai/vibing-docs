@@ -3,6 +3,8 @@ title: 'SDK Overview'
 description: 'Introduction to the Vibing AI development SDK and tools'
 ---
 
+The Vibing AI SDK provides a comprehensive set of tools, frameworks, and APIs for developing and integrating with the Vibing AI platform. This document provides an overview of the SDK components and capabilities.
+
 # Vibing AI SDK Overview
 
 The Vibing AI SDK provides a comprehensive set of tools, frameworks, and APIs for developing and integrating with the Vibing AI platform. This document provides an overview of the SDK components and capabilities.

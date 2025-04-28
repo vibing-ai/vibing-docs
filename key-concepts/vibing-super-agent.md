@@ -1,5 +1,3 @@
-# Vibing Super Agent
-
 The **Vibing Super Agent** is the central orchestrating intelligence at the core of the Vibing AI platform. It functions as a sophisticated AI coordinator that manages interactions between users, specialized agents, and platform offerings.
 
 ## Overview
@@ -105,19 +103,3 @@ When building offerings that interact with the Vibing Super Agent, developers sh
 The platform provides dedicated endpoints for interacting with the Vibing Super Agent:
 
 ```
-POST   /api/v1/agent/message
-GET    /api/v1/agent/conversation/{id}
-POST   /api/v1/agent/conversation/{id}/message
-PUT    /api/v1/agent/conversation/{id}/title
-DELETE /api/v1/agent/conversation/{id}
-GET    /api/v1/agent/conversations
-```
-
-These endpoints enable developers to integrate with the Super Agent's conversation system and build enhanced experiences around it.
-
-## Related Concepts
-
-- [Interface Surfaces](/key-concepts/interface-surfaces) - UI contexts for interaction
-- [Permission Model](/key-concepts/permission-model) - Security framework for access control
-- [Offering Types](/key-concepts/offering-types) - Types of integrations with the platform
-- [Unified Memory System](/key-concepts/unified-memory-system) - Shared context system 

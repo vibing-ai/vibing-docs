@@ -1,4 +1,48 @@
 ---
-title: 'New Plant'
-openapi: 'WEBHOOK /plant/webhook'
+title: 'Create Event Webhook Subscription'
+openapi: 'POST /api/events/subscriptions'
 ---
+
+Creates a new event subscription to receive real-time updates via webhook delivery.
+
+### Request
+
+```
+POST /api/events/subscriptions
+Authorization: Bearer ACCESS_TOKEN
+Content-Type: application/json
+
+{
+  "channels": ["conversation", "memory"],
+  "events": ["message.new", "memory.updated"],
+  "filters": {
+    "conversation_id": "conv_6789"
+  },
+  "delivery": {
+    "method": "webhook",
+    "url": "https://example.com/webhook",
+    "headers": {
+      "X-Custom-Header": "value"
+    }
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "subscription_id": "sub_12345",
+  "channels": ["conversation", "memory"],
+  "events": ["message.new", "memory.updated"],
+  "filters": {
+    "conversation_id": "conv_6789"
+  },
+  "delivery": {
+    "method": "webhook",
+    "url": "https://example.com/webhook"
+  },
+  "created_at": "2023-04-10T16:40:00Z",
+  "status": "active"
+}
+```

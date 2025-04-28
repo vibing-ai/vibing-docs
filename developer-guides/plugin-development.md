@@ -1,5 +1,3 @@
-# Plugin Development
-
 This guide walks you through the process of creating a plugin for the Vibing AI platform.
 
 ## Overview

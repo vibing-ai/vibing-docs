@@ -1,5 +1,3 @@
-# Offering Types
-
 The Vibing AI platform supports multiple types of **Offerings** that developers can create and publish to the marketplace. Each offering type serves a distinct purpose within the ecosystem, with specific capabilities, integration patterns, and development approaches.
 
 ## Overview

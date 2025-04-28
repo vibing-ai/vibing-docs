@@ -1,4 +1,18 @@
 ---
-title: 'Delete Plant'
-openapi: 'DELETE /plants/{id}'
+title: 'Delete Project'
+openapi: 'DELETE /api/projects/:id'
 ---
+
+Deletes a project by its unique identifier.
+
+### Request
+
+```
+DELETE /api/projects/:id
+Authorization: Bearer ACCESS_TOKEN
+```
+
+### Response
+
+- **204 No Content**: Project deleted successfully.
+- **404 Not Found**: Project not found.

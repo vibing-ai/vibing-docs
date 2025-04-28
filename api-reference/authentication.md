@@ -3,8 +3,6 @@ title: 'Authentication'
 description: 'Authenticate with the Vibing AI API'
 ---
 
-# Authentication
-
 All API requests to Vibing AI require authentication. This guide explains the authentication methods available and how to implement them in your applications.
 
 ## Authentication Methods

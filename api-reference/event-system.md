@@ -3,8 +3,6 @@ title: 'Event System API'
 description: 'Real-time event system for the Vibing AI platform'
 ---
 
-# Event System API
-
 The Event System enables real-time communication between platform components and with client applications, providing a consistent way to receive updates and trigger actions across the platform.
 
 ## Overview

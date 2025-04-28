@@ -1,5 +1,3 @@
-# Agent Development
-
 This guide walks you through the process of creating a specialized AI agent for the Vibing AI platform.
 
 ## Overview

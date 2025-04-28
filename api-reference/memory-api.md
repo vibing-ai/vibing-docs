@@ -3,8 +3,6 @@ title: 'Unified Memory System API'
 description: 'API for accessing the Vibing AI Unified Memory System'
 ---
 
-# Unified Memory System API
-
 The Unified Memory System API provides interfaces for storing, retrieving, and searching context-aware memories, which is a cornerstone of the Vibing AI platform.
 
 ## Core Concepts

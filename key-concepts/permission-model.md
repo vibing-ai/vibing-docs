@@ -1,5 +1,3 @@
-# Permission Model
-
 The **Permission Model** is a foundational security framework within the Vibing AI platform that governs how offerings (apps, plugins, agents, etc.) access user data and platform capabilities. It implements purpose-bound, time-limited authorizations that put users in control of their AI experience.
 
 ## Overview

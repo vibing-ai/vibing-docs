@@ -1,5 +1,3 @@
-# Interface Surfaces
-
 **Interface Surfaces** are standardized UI contexts where offerings (apps, plugins, agents, etc.) can render their user interfaces within the Vibing AI platform. These surfaces provide consistent integration points that maintain a cohesive user experience while allowing offerings to present specialized functionality.
 
 ## Overview

@@ -1,5 +1,3 @@
-# App Development
-
 This guide walks you through the process of creating a fully-featured app for the Vibing AI platform.
 
 ## Overview

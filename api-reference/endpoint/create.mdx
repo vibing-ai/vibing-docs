@@ -1,4 +1,36 @@
 ---
-title: 'Create Plant'
-openapi: 'POST /plants'
+title: 'Create Project'
+openapi: 'POST /api/projects'
 ---
+
+Creates a new project within a workspace.
+
+### Request
+
+```
+POST /api/projects
+Authorization: Bearer ACCESS_TOKEN
+Content-Type: application/json
+
+{
+  "name": "New Project",
+  "description": "Project description",
+  "workspace_id": "workspace-id",
+  "icon": "project-icon-name"
+}
+```
+
+### Response
+
+```json
+{
+  "id": "project-id",
+  "name": "New Project",
+  "description": "Project description",
+  "workspace_id": "workspace-id",
+  "icon": "project-icon-name",
+  "created_at": "2023-04-10T08:15:00Z",
+  "updated_at": "2023-04-10T08:15:00Z",
+  "created_by": "user-id"
+}
+```
