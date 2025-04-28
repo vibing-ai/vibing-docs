@@ -1,0 +1,365 @@
+---
+title: 'Getting Started with Vibing AI'
+description: 'Learn how to set up and start using Vibing AI in your projects'
+---
+
+# Getting Started with Vibing AI
+
+This guide will walk you through the process of setting up Vibing AI in your application and implementing basic functionality.
+
+## Installation
+
+First, install the Vibing AI SDK in your project:
+
+```bash
+# Using npm
+npm install @vibing/sdk
+
+# Using yarn
+yarn add @vibing/sdk
+
+# Using pnpm
+pnpm add @vibing/sdk
+```
+
+## Setting Up Your API Key
+
+Sign up for a Vibing AI account at [vibingai.com](https://vibingai.com) and create an API key from your dashboard.
+
+For security reasons, never hardcode your API key directly in your frontend code. Instead, use environment variables:
+
+```env
+# .env.local
+NEXT_PUBLIC_VIBING_API_KEY=your_api_key_here
+```
+
+For server-side applications, you can simply use:
+
+```env
+# .env
+VIBING_API_KEY=your_api_key_here
+```
+
+## Initializing the Client
+
+### Client-Side (Browser)
+
+```tsx
+// utils/vibing-client.ts
+import { VibingAI } from '@vibing/sdk';
+
+// Initialize the client (for browser use)
+export const vibingClient = new VibingAI({
+  apiKey: process.env.NEXT_PUBLIC_VIBING_API_KEY,
+});
+```
+
+### Server-Side (Node.js)
+
+```typescript
+// utils/vibing-server.ts
+import { VibingAI } from '@vibing/sdk';
+
+// Initialize the client (for server use)
+export const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+});
+```
+
+## Creating Your First Conversation
+
+A conversation is a series of messages between the user and the AI. Here's how to create a new conversation:
+
+```typescript
+async function startNewConversation() {
+  try {
+    const conversation = await vibingClient.conversations.create();
+    console.log('New conversation created:', conversation.id);
+    return conversation;
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    throw error;
+  }
+}
+```
+
+## Sending and Receiving Messages
+
+Once you have a conversation, you can start sending and receiving messages:
+
+```typescript
+async function sendMessage(conversationId, content) {
+  try {
+    // Send the user's message
+    await vibingClient.messages.send({
+      conversation_id: conversationId,
+      content,
+      sender: 'user',
+    });
+    
+    // Generate a response from the AI
+    const response = await vibingClient.messages.generate({
+      conversation_id: conversationId,
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('Error in message exchange:', error);
+    throw error;
+  }
+}
+```
+
+## Implementing a Basic Chat Interface
+
+Here's a simple React component that implements a chat interface:
+
+```tsx
+// components/SimpleChat.tsx
+import React, { useState, useEffect } from 'react';
+import { vibingClient } from '../utils/vibing-client';
+
+export function SimpleChat() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [conversationId, setConversationId] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Initialize conversation when component mounts
+  useEffect(() => {
+    async function init() {
+      try {
+        const conversation = await vibingClient.conversations.create();
+        setConversationId(conversation.id);
+      } catch (error) {
+        console.error('Failed to create conversation:', error);
+      }
+    }
+    
+    init();
+  }, []);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    
+    if (!input.trim() || !conversationId) return;
+    
+    const userMessage = {
+      content: input,
+      sender: 'user',
+    };
+    
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setLoading(true);
+    
+    try {
+      // Send user message
+      await vibingClient.messages.send({
+        conversation_id: conversationId,
+        content: input,
+        sender: 'user',
+      });
+      
+      // Generate AI response
+      const response = await vibingClient.messages.generate({
+        conversation_id: conversationId,
+      });
+      
+      setMessages((prev) => [...prev, {
+        content: response.content,
+        sender: 'assistant',
+      }]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      setMessages((prev) => [...prev, {
+        content: 'Sorry, there was an error processing your request.',
+        sender: 'assistant',
+      }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-96 border rounded">
+      <div className="flex-1 p-4 overflow-y-auto">
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`mb-2 ${
+              msg.sender === 'user' ? 'text-right' : 'text-left'
+            }`}
+          >
+            <span
+              className={`inline-block p-2 rounded ${
+                msg.sender === 'user'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200'
+              }`}
+            >
+              {msg.content}
+            </span>
+          </div>
+        ))}
+        {loading && (
+          <div className="text-left">
+            <span className="inline-block p-2 rounded bg-gray-200">
+              <span className="animate-pulse">...</span>
+            </span>
+          </div>
+        )}
+      </div>
+      
+      <form onSubmit={handleSend} className="border-t p-2">
+        <div className="flex">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1 p-2 border rounded-l"
+            disabled={!conversationId || loading}
+          />
+          <button
+            type="submit"
+            className="bg-blue-500 text-white px-4 rounded-r"
+            disabled={!conversationId || loading || !input.trim()}
+          >
+            Send
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+```
+
+## Working with Assistants
+
+Assistants are AI personas with specific instructions, knowledge, and skills. Here's how to create and use an assistant:
+
+```typescript
+// Create a custom assistant
+async function createCustomAssistant() {
+  const assistant = await vibingClient.assistants.create({
+    name: 'Customer Support Assistant',
+    description: 'Helps customers with product inquiries and issues',
+    instructions: `
+      You are a helpful customer support assistant for our electronics store.
+      Be friendly and empathetic when responding to customers.
+      
+      Our return policy:
+      - Products can be returned within 30 days of purchase
+      - Must have original receipt
+      - Items must be in original packaging
+      - Electronics must be unopened unless defective
+      
+      Our store hours:
+      - Monday to Friday: 9am to 8pm
+      - Saturday: 10am to 6pm
+      - Sunday: 12pm to 5pm
+    `,
+    capabilities: {
+      tasks: ['customer_support', 'product_information'],
+    }
+  });
+  
+  return assistant;
+}
+
+// Use the assistant in a conversation
+async function useAssistantInConversation(conversationId, assistantId) {
+  await vibingClient.conversations.update({
+    id: conversationId,
+    assistant_id: assistantId
+  });
+  
+  // Now all messages generated in this conversation will use this assistant
+}
+```
+
+## Handling Files and Documents
+
+Vibing AI can process various file types to extract information:
+
+```typescript
+async function processDocument(conversationId, filePath) {
+  // Upload a document to be processed
+  const file = await vibingClient.files.upload({
+    file: fs.createReadStream(filePath),
+    purpose: 'document_analysis'
+  });
+  
+  // Process the document in a conversation
+  await vibingClient.messages.send({
+    conversation_id: conversationId,
+    content: {
+      type: 'file_reference',
+      file_id: file.id
+    },
+    sender: 'user'
+  });
+  
+  // Generate a response that can reference information from the document
+  const response = await vibingClient.messages.generate({
+    conversation_id: conversationId
+  });
+  
+  return response;
+}
+```
+
+## Using Memory for Context
+
+Vibing AI's memory functionality allows you to store and retrieve information for better context:
+
+```typescript
+// Store information in memory
+async function storeUserPreferences(userId, preferences) {
+  const memoryItem = await vibingClient.memory.store({
+    content: {
+      type: 'application/json',
+      data: preferences
+    },
+    context: {
+      user_id: userId,
+      source: 'user_preferences'
+    },
+    tags: ['preferences', 'user_data']
+  });
+  
+  return memoryItem.id;
+}
+
+// Retrieve information from memory
+async function getUserPreferences(userId) {
+  const results = await vibingClient.memory.search({
+    filters: {
+      'context.user_id': userId,
+      'context.source': 'user_preferences',
+      tags: 'preferences'
+    },
+    limit: 1
+  });
+  
+  if (results.data.length > 0) {
+    return results.data[0].content.data;
+  }
+  
+  return null;
+}
+```
+
+## Next Steps
+
+Now that you've set up the basics, you can explore more advanced features:
+
+- [Custom workflows](/guides/workflows) - Create multi-step processes
+- [Fine-tuning prompts](/guides/fine-tuning) - Customize AI behavior
+- [Advanced memory usage](/guides/memory) - Store and retrieve complex information
+- [Authentication and security](/guides/security) - Secure your AI implementation
+- [Analytics and monitoring](/guides/analytics) - Track and improve performance
+
+For a complete reference of all API methods, see the [API Reference](/api-reference). 

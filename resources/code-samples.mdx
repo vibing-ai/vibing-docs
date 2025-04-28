@@ -1,0 +1,1024 @@
+---
+title: 'Code Samples'
+description: 'Practical implementation examples for Vibing AI features'
+---
+
+# Code Samples
+
+Explore real-world code examples that demonstrate how to implement Vibing AI features in your applications. These examples are designed to help you get started quickly with common use cases.
+
+## Basic Chat Implementation
+
+A simple implementation of a chat interface using Vibing AI.
+
+```tsx
+// components/Chat.tsx
+import { useState, useEffect } from 'react';
+import { VibingAI } from '@vibing/sdk';
+
+// Initialize the client
+const vibingClient = new VibingAI({
+  apiKey: process.env.NEXT_PUBLIC_VIBING_API_KEY,
+});
+
+export default function Chat() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [conversationId, setConversationId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // Create a new conversation when the component mounts
+    async function initConversation() {
+      const conversation = await vibingClient.conversations.create();
+      setConversationId(conversation.id);
+      
+      // Add initial greeting
+      const greeting = {
+        id: 'greeting',
+        content: 'Hello! How can I help you today?',
+        sender: 'assistant',
+        timestamp: new Date().toISOString(),
+      };
+      
+      setMessages([greeting]);
+    }
+    
+    initConversation();
+    
+    // Cleanup function
+    return () => {
+      // Optional: You can archive the conversation here if needed
+    };
+  }, []);
+
+  // Send a message to Vibing AI
+  const sendMessage = async (e) => {
+    e.preventDefault();
+    
+    if (!input.trim() || !conversationId) return;
+    
+    const userMessage = {
+      id: `user-${Date.now()}`,
+      content: input,
+      sender: 'user',
+      timestamp: new Date().toISOString(),
+    };
+    
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+    
+    try {
+      // Send message to Vibing AI
+      await vibingClient.messages.send({
+        conversation_id: conversationId,
+        content: input,
+        sender: 'user',
+      });
+      
+      // Get the response
+      const response = await vibingClient.messages.generate({
+        conversation_id: conversationId,
+      });
+      
+      const assistantMessage = {
+        id: response.id || `assistant-${Date.now()}`,
+        content: response.content,
+        sender: 'assistant',
+        timestamp: new Date().toISOString(),
+      };
+      
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      
+      // Show error to user
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `error-${Date.now()}`,
+          content: 'Sorry, there was an error processing your request.',
+          sender: 'assistant',
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-[600px] w-full max-w-2xl mx-auto border rounded-lg overflow-hidden">
+      <div className="flex-1 p-4 overflow-y-auto">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`mb-4 ${
+              message.sender === 'user' ? 'text-right' : 'text-left'
+            }`}
+          >
+            <div
+              className={`inline-block p-3 rounded-lg ${
+                message.sender === 'user'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-800'
+              }`}
+            >
+              {message.content}
+            </div>
+          </div>
+        ))}
+        {isLoading && (
+          <div className="text-left mb-4">
+            <div className="inline-block p-3 rounded-lg bg-gray-200 text-gray-800">
+              <span className="animate-pulse">Thinking...</span>
+            </div>
+          </div>
+        )}
+      </div>
+      
+      <form onSubmit={sendMessage} className="border-t p-4">
+        <div className="flex">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1 p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
+            className="bg-blue-500 text-white px-4 py-2 rounded-r-lg disabled:bg-blue-300"
+          >
+            Send
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+```
+
+## Memory Integration
+
+This example demonstrates how to use Vibing AI's memory capabilities to store and retrieve information.
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+});
+
+// Store information in memory
+async function storeProductInformation(product) {
+  try {
+    const memoryItem = await vibingClient.memory.store({
+      content: {
+        type: 'application/json',
+        data: {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          price: product.price,
+          category: product.category,
+          features: product.features,
+        }
+      },
+      context: {
+        source: 'product_catalog',
+        last_updated: new Date().toISOString()
+      },
+      tags: ['product', product.category, 'catalog']
+    });
+    
+    console.log(`Stored product information with ID: ${memoryItem.id}`);
+    return memoryItem.id;
+  } catch (error) {
+    console.error('Error storing product information:', error);
+    throw error;
+  }
+}
+
+// Search for products by text
+async function searchProducts(query) {
+  try {
+    const results = await vibingClient.memory.searchText({
+      text: query,
+      filters: {
+        tags: 'product'
+      },
+      limit: 5
+    });
+    
+    return results.data.map(item => ({
+      id: item.content.data.id,
+      name: item.content.data.name,
+      description: item.content.data.description,
+      price: item.content.data.price,
+      relevance: item.score
+    }));
+  } catch (error) {
+    console.error('Error searching products:', error);
+    throw error;
+  }
+}
+
+// Get product recommendations based on context
+async function getProductRecommendations(conversationId, userId) {
+  try {
+    // First, get recent conversation history
+    const recentMessages = await vibingClient.messages.list({
+      conversation_id: conversationId,
+      limit: 10
+    });
+    
+    // Extract user interests from conversation
+    const userInterests = await extractUserInterests(recentMessages);
+    
+    // Get purchase history
+    const purchaseHistory = await getUserPurchaseHistory(userId);
+    
+    // Store this context for the recommendation engine
+    await vibingClient.memory.store({
+      content: {
+        type: 'application/json',
+        data: {
+          user_id: userId,
+          interests: userInterests,
+          purchase_history: purchaseHistory
+        }
+      },
+      context: {
+        conversation_id: conversationId,
+        intent: 'product_recommendation'
+      },
+      tags: ['user_profile', 'recommendation_context']
+    });
+    
+    // Search for relevant products
+    const recommendedProducts = await vibingClient.memory.searchVector({
+      vector: await generateEmbeddingFromInterests(userInterests),
+      filters: {
+        tags: 'product',
+        'content.data.category': { $in: userInterests.categories }
+      },
+      limit: 3
+    });
+    
+    return recommendedProducts.data.map(item => item.content.data);
+  } catch (error) {
+    console.error('Error getting product recommendations:', error);
+    throw error;
+  }
+}
+```
+
+## Custom Workflow
+
+This example demonstrates how to create a custom workflow for handling a complex business process.
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+});
+
+// Create a workflow for handling insurance claims
+const insuranceClaimWorkflow = vibingClient.workflows.create({
+  name: 'insurance_claim_processing',
+  
+  steps: [
+    // Step 1: Collect basic claim information
+    {
+      id: 'collect_claim_info',
+      handler: async (context, { proceed }) => {
+        const { conversation_id } = context;
+        
+        // Send initial message
+        await vibingClient.messages.send({
+          conversation_id,
+          content: "I'll help you file your insurance claim. First, could you please tell me what type of claim you're filing (auto, home, health, etc.)?",
+          sender: 'assistant'
+        });
+        
+        // Wait for user response
+        const claimType = await waitForUserResponse(conversation_id);
+        
+        // Ask for incident date
+        await vibingClient.messages.send({
+          conversation_id,
+          content: "When did the incident occur? Please provide the date (MM/DD/YYYY).",
+          sender: 'assistant'
+        });
+        
+        // Wait for user response
+        const incidentDate = await waitForUserResponse(conversation_id);
+        
+        // Store the basic claim info
+        await vibingClient.memory.store({
+          content: {
+            type: 'application/json',
+            data: {
+              claim_type: claimType,
+              incident_date: incidentDate
+            }
+          },
+          context: {
+            conversation_id,
+            workflow_id: 'insurance_claim_processing'
+          },
+          tags: ['claim_info', 'step_1']
+        });
+        
+        return proceed({
+          claim_type: claimType,
+          incident_date: incidentDate
+        });
+      }
+    },
+    
+    // Step 2: Collect specific details based on claim type
+    {
+      id: 'collect_specific_details',
+      handler: async (context, { proceed }) => {
+        const { conversation_id, claim_type } = context;
+        
+        let claimDetails = {};
+        
+        if (claim_type.toLowerCase().includes('auto')) {
+          // Collect auto-specific details
+          claimDetails = await collectAutoClaimDetails(conversation_id);
+        } else if (claim_type.toLowerCase().includes('home')) {
+          // Collect home-specific details
+          claimDetails = await collectHomeClaimDetails(conversation_id);
+        } else {
+          // Collect generic details
+          claimDetails = await collectGenericClaimDetails(conversation_id);
+        }
+        
+        // Store the specific claim details
+        await vibingClient.memory.store({
+          content: {
+            type: 'application/json',
+            data: claimDetails
+          },
+          context: {
+            conversation_id,
+            claim_type,
+            workflow_id: 'insurance_claim_processing'
+          },
+          tags: ['claim_details', 'step_2']
+        });
+        
+        return proceed({
+          ...context,
+          claim_details: claimDetails
+        });
+      }
+    },
+    
+    // Step 3: Upload documents
+    {
+      id: 'document_upload',
+      handler: async (context, { proceed }) => {
+        const { conversation_id, claim_type } = context;
+        
+        // Determine required documents based on claim type
+        const requiredDocuments = getRequiredDocuments(claim_type);
+        
+        // Request documents
+        await vibingClient.messages.send({
+          conversation_id,
+          content: `Please upload the following documents: ${requiredDocuments.join(', ')}`,
+          sender: 'assistant'
+        });
+        
+        // Process document uploads (this would interface with your file upload system)
+        const uploadedDocuments = await processDocumentUploads(conversation_id);
+        
+        return proceed({
+          ...context,
+          documents: uploadedDocuments
+        });
+      }
+    },
+    
+    // Step 4: Verify and submit claim
+    {
+      id: 'verify_and_submit',
+      handler: async (context, { proceed }) => {
+        const { conversation_id, claim_type, incident_date, claim_details, documents } = context;
+        
+        // Prepare claim summary
+        const claimSummary = formatClaimSummary({
+          claim_type,
+          incident_date,
+          ...claim_details
+        });
+        
+        // Send summary for verification
+        await vibingClient.messages.send({
+          conversation_id,
+          content: `Here's a summary of your claim:\n\n${claimSummary}\n\nIs this information correct? (Yes/No)`,
+          sender: 'assistant'
+        });
+        
+        // Wait for confirmation
+        const confirmation = await waitForUserResponse(conversation_id);
+        
+        if (confirmation.toLowerCase().includes('yes')) {
+          // Submit the claim
+          const claimId = await submitClaim({
+            claim_type,
+            incident_date,
+            claim_details,
+            documents
+          });
+          
+          await vibingClient.messages.send({
+            conversation_id,
+            content: `Thank you! Your claim has been submitted. Your claim ID is ${claimId}. You'll receive updates on your claim status via email.`,
+            sender: 'assistant'
+          });
+          
+          return proceed({
+            status: 'completed',
+            claim_id: claimId
+          });
+        } else {
+          // Handle corrections
+          await vibingClient.messages.send({
+            conversation_id,
+            content: "I'm sorry the information isn't correct. Let's make some corrections. What needs to be fixed?",
+            sender: 'assistant'
+          });
+          
+          // Restart the workflow from step 1
+          return { reset: true };
+        }
+      }
+    }
+  ],
+  
+  onError: async (error, context) => {
+    const { conversation_id } = context;
+    
+    console.error('Workflow error:', error);
+    
+    await vibingClient.messages.send({
+      conversation_id,
+      content: "I'm sorry, but there was an error processing your claim. Please try again later or contact our support team for assistance.",
+      sender: 'assistant'
+    });
+  }
+});
+
+// Helper functions
+async function waitForUserResponse(conversationId) {
+  // Implementation depends on your application's architecture
+  // This could use polling, webhooks, or event listeners
+  
+  return new Promise((resolve) => {
+    // Example implementation
+    const listener = vibingClient.events.on('conversation.message_received', (event) => {
+      if (
+        event.payload.conversation_id === conversationId &&
+        event.payload.message.sender === 'user'
+      ) {
+        listener.unsubscribe();
+        resolve(event.payload.message.content);
+      }
+    });
+  });
+}
+
+// Start the workflow for a conversation
+export async function startInsuranceClaimWorkflow(conversationId) {
+  return await insuranceClaimWorkflow.start({
+    conversation_id: conversationId
+  });
+}
+```
+
+## Fine-tuning a Prompt
+
+This example shows how to customize and fine-tune prompts for specific use cases.
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+});
+
+// Create a specialized technical support assistant
+async function createTechnicalSupportAssistant(productId) {
+  // Get product documentation
+  const productDocs = await getProductDocumentation(productId);
+  
+  // Get common issues and solutions
+  const troubleshootingGuide = await getTroubleshootingGuide(productId);
+  
+  // Format documentation for context
+  const formattedDocs = formatDocsForContext(productDocs);
+  const formattedTroubleshooting = formatTroubleshootingForContext(troubleshootingGuide);
+  
+  // Create the assistant with custom system prompt
+  const assistant = await vibingClient.assistants.create({
+    name: `${productDocs.name} Support Assistant`,
+    description: `Technical support assistant for ${productDocs.name}`,
+    instructions: `
+      You are a technical support specialist for ${productDocs.name}.
+      
+      Product Specifications:
+      ${formattedDocs.specifications}
+      
+      Setup Instructions:
+      ${formattedDocs.setup}
+      
+      Common Issues and Solutions:
+      ${formattedTroubleshooting}
+      
+      When assisting users:
+      1. First identify the specific issue by asking clarifying questions
+      2. Check if it matches any known issues in the troubleshooting guide
+      3. Provide step-by-step instructions to resolve the issue
+      4. If the issue cannot be resolved, offer to escalate to a human agent
+      5. Always maintain a helpful, patient tone
+      
+      Do not:
+      - Speculate about product features or specifications not listed
+      - Suggest workarounds that might damage the product
+      - Promise features in future updates
+    `,
+    capabilities: {
+      tasks: ['technical_support', 'product_information'],
+      knowledge_cutoff: productDocs.version_date
+    },
+    metadata: {
+      product_id: productId,
+      documentation_version: productDocs.version
+    }
+  });
+  
+  return assistant;
+}
+
+// Use the assistant in a conversation
+async function handleTechnicalSupportConversation(conversationId, productId) {
+  // Create or get the assistant
+  const assistant = await getOrCreateAssistant(productId);
+  
+  // Set the assistant for this conversation
+  await vibingClient.conversations.update({
+    id: conversationId,
+    assistant_id: assistant.id
+  });
+  
+  // Set up event handler for user messages
+  vibingClient.events.on('conversation.message_received', async (event) => {
+    if (
+      event.payload.conversation_id === conversationId &&
+      event.payload.message.sender === 'user'
+    ) {
+      // Analyze the message for specific technical issues
+      const issues = await detectTechnicalIssues(event.payload.message.content, productId);
+      
+      // If specific issues were detected, add relevant context from docs
+      if (issues.length > 0) {
+        const relevantDocSections = await findRelevantDocumentation(issues, productId);
+        
+        // Store the relevant documentation for this conversation
+        await vibingClient.memory.store({
+          content: {
+            type: 'text/markdown',
+            text: formatRelevantDocs(relevantDocSections)
+          },
+          context: {
+            conversation_id: conversationId,
+            issue_types: issues.map(i => i.type)
+          },
+          tags: ['relevant_documentation', 'technical_support']
+        });
+      }
+      
+      // Generate a response
+      await vibingClient.messages.generate({
+        conversation_id: conversationId
+      });
+    }
+  });
+}
+```
+
+## Monitoring and Analytics
+
+This example demonstrates how to set up monitoring and analytics for your Vibing AI implementation.
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+});
+
+// Track conversation metrics
+async function trackConversationMetrics() {
+  // Set up event listeners for key events
+  
+  // Track conversation starts
+  vibingClient.events.on('conversation.created', async (event) => {
+    const { conversation_id } = event.payload;
+    
+    await recordAnalyticsEvent('conversation_started', {
+      conversation_id,
+      timestamp: new Date().toISOString()
+    });
+  });
+  
+  // Track message metrics
+  vibingClient.events.on('conversation.message_received', async (event) => {
+    const { conversation_id, message } = event.payload;
+    
+    if (message.sender === 'user') {
+      await recordAnalyticsEvent('user_message', {
+        conversation_id,
+        message_id: message.id,
+        timestamp: new Date().toISOString(),
+        message_length: message.content.length
+      });
+    } else if (message.sender === 'assistant') {
+      await recordAnalyticsEvent('assistant_message', {
+        conversation_id,
+        message_id: message.id,
+        timestamp: new Date().toISOString(),
+        message_length: message.content.length,
+        response_time: calculateResponseTime(conversation_id, message.id)
+      });
+    }
+  });
+  
+  // Track conversation endings
+  vibingClient.events.on('conversation.archived', async (event) => {
+    const { conversation_id } = event.payload;
+    
+    const conversationData = await getConversationData(conversation_id);
+    
+    await recordAnalyticsEvent('conversation_ended', {
+      conversation_id,
+      timestamp: new Date().toISOString(),
+      duration: calculateConversationDuration(conversationData),
+      message_count: conversationData.messages.length,
+      user_message_count: conversationData.messages.filter(m => m.sender === 'user').length,
+      assistant_message_count: conversationData.messages.filter(m => m.sender === 'assistant').length
+    });
+    
+    // Analyze conversation for quality
+    await analyzeConversationQuality(conversation_id, conversationData);
+  });
+}
+
+// Generate weekly usage report
+async function generateWeeklyReport(startDate, endDate) {
+  // Get conversation metrics
+  const conversations = await getConversationMetrics(startDate, endDate);
+  
+  // Calculate key metrics
+  const totalConversations = conversations.length;
+  const averageMessages = calculateAverageMessages(conversations);
+  const averageDuration = calculateAverageDuration(conversations);
+  const mostCommonTopics = findMostCommonTopics(conversations);
+  const userSatisfactionRate = calculateSatisfactionRate(conversations);
+  const responseTimeDistribution = calculateResponseTimeDistribution(conversations);
+  
+  // Generate report
+  return {
+    period: {
+      start: startDate,
+      end: endDate
+    },
+    summary: {
+      total_conversations: totalConversations,
+      average_messages_per_conversation: averageMessages,
+      average_conversation_duration: averageDuration,
+      user_satisfaction_rate: userSatisfactionRate
+    },
+    topics: mostCommonTopics,
+    response_times: responseTimeDistribution,
+    peak_usage_times: findPeakUsageTimes(conversations),
+    usage_growth: calculateUsageGrowth(startDate, endDate),
+    recommendations: generateInsightsAndRecommendations({
+      conversations,
+      user_satisfaction: userSatisfactionRate,
+      common_topics: mostCommonTopics
+    })
+  };
+}
+
+// Track and improve conversation quality
+async function analyzeConversationQuality(conversationId, conversationData) {
+  // Extract features for quality analysis
+  const features = extractConversationFeatures(conversationData);
+  
+  // Evaluate the conversation quality
+  const qualityMetrics = {
+    issue_resolution: evaluateIssueResolution(features),
+    clarity_of_responses: evaluateClarity(features),
+    efficiency: evaluateEfficiency(features),
+    user_satisfaction: estimateUserSatisfaction(features)
+  };
+  
+  // Identify areas for improvement
+  const improvementAreas = identifyImprovementAreas(qualityMetrics, features);
+  
+  // Store quality analysis
+  await vibingClient.memory.store({
+    content: {
+      type: 'application/json',
+      data: {
+        quality_metrics: qualityMetrics,
+        improvement_areas: improvementAreas,
+        features: features
+      }
+    },
+    context: {
+      conversation_id: conversationId,
+      analysis_timestamp: new Date().toISOString()
+    },
+    tags: ['quality_analysis', 'conversation_metrics']
+  });
+  
+  // If serious issues detected, flag for human review
+  if (shouldFlagForReview(qualityMetrics)) {
+    await flagConversationForReview(conversationId, qualityMetrics, improvementAreas);
+  }
+  
+  return qualityMetrics;
+}
+```
+
+## Authentication and Security
+
+This example demonstrates how to implement secure authentication with Vibing AI.
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+import { verifyJwt, generateJwt } from './auth';
+
+// Safely create a client with user authentication
+async function createSecureVibingClient(userToken) {
+  try {
+    // Verify the user's JWT
+    const userData = await verifyJwt(userToken);
+    if (!userData) {
+      throw new Error('Invalid authentication token');
+    }
+    
+    // Check user permissions
+    if (!hasRequiredPermissions(userData.userId, userData.roles)) {
+      throw new Error('Insufficient permissions');
+    }
+    
+    // Create Vibing client with user context
+    const vibingClient = new VibingAI({
+      apiKey: process.env.VIBING_API_KEY,
+    });
+    
+    // Associate user data with conversations
+    vibingClient.events.on('conversation.created', async (event) => {
+      const { conversation_id } = event.payload;
+      
+      // Store user identity in memory
+      await vibingClient.memory.store({
+        content: {
+          type: 'application/json',
+          data: {
+            user_id: userData.userId,
+            email: userData.email,
+            roles: userData.roles,
+            teams: userData.teams
+          }
+        },
+        context: {
+          conversation_id,
+          source: 'user_authentication'
+        },
+        tags: ['user_identity', 'security_context']
+      });
+      
+      // Add user-specific permissions
+      await setConversationPermissions(conversation_id, userData);
+    });
+    
+    return vibingClient;
+  } catch (error) {
+    console.error('Security error creating Vibing client:', error);
+    throw new Error('Authentication failed');
+  }
+}
+
+// Server-side function to initiate a secure conversation
+export async function initiateSecureConversation(req, res) {
+  try {
+    // Get authorization token from request
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing authentication token' });
+    }
+    
+    const token = authHeader.substring(7);
+    
+    // Create secure client
+    const vibingClient = await createSecureVibingClient(token);
+    
+    // Create conversation with content controls
+    const conversation = await vibingClient.conversations.create({
+      metadata: {
+        user_id: req.body.userId,
+        session_id: req.body.sessionId,
+        ip_address: req.ip // You may want to hash/encrypt this
+      },
+      content_controls: {
+        allowed_topics: req.body.allowedTopics || ['general', 'support', 'product'],
+        restricted_topics: req.body.restrictedTopics || ['pricing', 'competitor_info'],
+        max_explicit_content_level: 'none'
+      }
+    });
+    
+    // Generate client-side token with limited permissions
+    const clientToken = generateJwt({
+      conversation_id: conversation.id,
+      permissions: ['read', 'write'],
+      expiration: '1h'
+    });
+    
+    // Return conversation info and token to client
+    return res.status(200).json({
+      conversation_id: conversation.id,
+      client_token: clientToken
+    });
+  } catch (error) {
+    console.error('Error creating secure conversation:', error);
+    return res.status(500).json({ error: 'Failed to create conversation' });
+  }
+}
+
+// Client-side initialization with secure token
+const initSecureChat = async (clientToken) => {
+  const vibingClient = new VibingAI({
+    apiKey: process.env.NEXT_PUBLIC_VIBING_API_KEY,
+    authToken: clientToken
+  });
+  
+  // Use the client for the conversation...
+  return vibingClient;
+};
+```
+
+## Advanced Data Processing
+
+Example showing how to process and analyze complex data with Vibing AI.
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+import { processDataset, generateVisualizations } from './dataProcessing';
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+});
+
+// Analyze a customer dataset and provide insights
+async function analyzeCustomerData(datasetId, conversationId) {
+  try {
+    // Retrieve the dataset
+    const dataset = await getDataset(datasetId);
+    
+    // Process the data
+    const processedData = await processDataset(dataset);
+    
+    // Generate key insights
+    const insights = await generateInsights(processedData);
+    
+    // Generate relevant visualizations
+    const visualizations = await generateVisualizations(processedData, insights);
+    
+    // Store the analysis in memory
+    const analysisId = await vibingClient.memory.store({
+      content: {
+        type: 'application/json',
+        data: {
+          dataset_id: datasetId,
+          processed_data: processedData,
+          insights: insights,
+          visualization_urls: visualizations.map(v => v.url)
+        }
+      },
+      context: {
+        conversation_id,
+        analysis_timestamp: new Date().toISOString()
+      },
+      tags: ['data_analysis', dataset.type]
+    });
+    
+    // Share insights with the user
+    await vibingClient.messages.send({
+      conversation_id,
+      content: formatInsightsForUser(insights),
+      sender: 'assistant'
+    });
+    
+    // Share visualizations
+    for (const viz of visualizations) {
+      await vibingClient.messages.send({
+        conversation_id,
+        content: {
+          type: 'image/png',
+          url: viz.url,
+          title: viz.title,
+          description: viz.description
+        },
+        sender: 'assistant'
+      });
+    }
+    
+    // Set up a handler for follow-up questions about the analysis
+    setupFollowUpHandler(conversationId, analysisId);
+    
+    return {
+      analysis_id: analysisId,
+      insights_count: insights.length,
+      visualizations_count: visualizations.length
+    };
+  } catch (error) {
+    console.error('Error analyzing customer data:', error);
+    
+    // Notify the user of the error
+    await vibingClient.messages.send({
+      conversation_id,
+      content: 'I encountered an error while analyzing your data. Please try again or contact support if the issue persists.',
+      sender: 'assistant'
+    });
+    
+    throw error;
+  }
+}
+
+// Handle specific queries about the data
+function setupFollowUpHandler(conversationId, analysisId) {
+  vibingClient.events.on('conversation.message_received', async (event) => {
+    if (
+      event.payload.conversation_id === conversationId &&
+      event.payload.message.sender === 'user'
+    ) {
+      const userQuery = event.payload.message.content;
+      
+      // Check if this is a data-related query
+      const dataQueryIntent = await detectDataQueryIntent(userQuery);
+      
+      if (dataQueryIntent.isDataQuery) {
+        // Retrieve the analysis
+        const analysis = await vibingClient.memory.getById(analysisId);
+        
+        // Generate a response based on the specific data query
+        const response = await generateDataQueryResponse(
+          userQuery,
+          analysis.content.data,
+          dataQueryIntent
+        );
+        
+        // Send the response
+        await vibingClient.messages.send({
+          conversation_id,
+          content: response.text,
+          sender: 'assistant'
+        });
+        
+        // If the query requires a new visualization
+        if (response.needsVisualization) {
+          const newViz = await generateDataVisualization(
+            analysis.content.data.processed_data,
+            dataQueryIntent
+          );
+          
+          await vibingClient.messages.send({
+            conversation_id,
+            content: {
+              type: 'image/png',
+              url: newViz.url,
+              title: newViz.title,
+              description: newViz.description
+            },
+            sender: 'assistant'
+          });
+        }
+      }
+    }
+  });
+}
+```
+
+These code samples demonstrate a range of Vibing AI implementation patterns. Use them as starting points for your own projects, and adapt them to your specific requirements. 

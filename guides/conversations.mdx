@@ -1,0 +1,798 @@
+---
+title: 'Conversations'
+description: 'Learn how to create and manage conversations in Vibing AI'
+---
+
+# Conversations Guide
+
+This guide covers how to create, manage, and use conversations with Vibing AI to build robust conversational experiences.
+
+## Understanding Conversations
+
+In Vibing AI, a conversation represents an ongoing dialogue between a user and an AI assistant. Conversations:
+
+- Maintain context across multiple interactions
+- Can be associated with specific users
+- Support various message types and attachments
+- Can be customized with metadata and settings
+- Persist across sessions for continuous user experiences
+
+## Basic Operations
+
+### Creating a Conversation
+
+To start a new conversation:
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY
+});
+
+// Create a simple conversation
+const conversation = await vibingClient.conversations.create();
+
+// Create with metadata
+const conversationWithMetadata = await vibingClient.conversations.create({
+  metadata: {
+    user_id: 'user_123',
+    session_id: 'session_456',
+    custom_field: 'value'
+  }
+});
+
+// Create with specific assistant
+const conversationWithAssistant = await vibingClient.conversations.create({
+  assistant_id: 'asst_789',
+  metadata: {
+    topic: 'customer_support'
+  }
+});
+```
+
+### Retrieving a Conversation
+
+```typescript
+// Get a specific conversation by ID
+const conversation = await vibingClient.conversations.retrieve('conv_123456');
+
+// Get with expanded messages
+const conversationWithMessages = await vibingClient.conversations.retrieve('conv_123456', {
+  expand: ['messages']
+});
+```
+
+### Listing Conversations
+
+```typescript
+// List all conversations (paginated)
+const conversations = await vibingClient.conversations.list();
+
+// List with filtering
+const filteredConversations = await vibingClient.conversations.list({
+  filter: {
+    user_id: 'user_123',
+    created_after: '2023-01-01T00:00:00Z',
+    status: 'active'
+  },
+  limit: 10,
+  order: 'desc'
+});
+```
+
+### Updating a Conversation
+
+```typescript
+// Update conversation metadata
+const updatedConversation = await vibingClient.conversations.update('conv_123456', {
+  metadata: {
+    status: 'resolved',
+    priority: 'high'
+  }
+});
+
+// Change the assigned assistant
+const reassignedConversation = await vibingClient.conversations.update('conv_123456', {
+  assistant_id: 'asst_newAssistant'
+});
+```
+
+### Deleting a Conversation
+
+```typescript
+// Delete a conversation
+await vibingClient.conversations.delete('conv_123456');
+```
+
+## Working with Messages
+
+Messages are the heart of any conversation. Here's how to add and retrieve them:
+
+### Sending Messages
+
+```typescript
+// Send a simple text message
+const message = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: 'Hello, how can I help you today?',
+  role: 'assistant'  // 'user' | 'assistant' | 'system'
+});
+
+// Send a user message
+const userMessage = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: 'I need help with my account',
+  role: 'user'
+});
+
+// Send a system message (usually for instructions)
+const systemMessage = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: 'The assistant should be helpful, concise, and polite.',
+  role: 'system'
+});
+```
+
+### Rich Message Content
+
+Vibing AI supports rich content in messages:
+
+```typescript
+// Send a message with multiple content types
+const richMessage = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: [
+    {
+      type: 'text',
+      text: 'Here is the information you requested:'
+    },
+    {
+      type: 'image_url',
+      image_url: {
+        url: 'https://example.com/image.jpg',
+        detail: 'high'
+      }
+    },
+    {
+      type: 'text',
+      text: 'Please let me know if you need anything else.'
+    }
+  ],
+  role: 'assistant'
+});
+```
+
+### Listing Messages
+
+```typescript
+// Get all messages in a conversation
+const messages = await vibingClient.messages.list({
+  conversation_id: 'conv_123456',
+  limit: 50,
+  order: 'asc'  // chronological order
+});
+
+// Get messages after a specific message
+const recentMessages = await vibingClient.messages.list({
+  conversation_id: 'conv_123456',
+  after: 'msg_lastMessageId',
+  limit: 10
+});
+```
+
+### Retrieving a Specific Message
+
+```typescript
+// Get a single message
+const message = await vibingClient.messages.retrieve('msg_123456');
+```
+
+### Updating Messages
+
+```typescript
+// Update a message (for example, adding metadata)
+const updatedMessage = await vibingClient.messages.update('msg_123456', {
+  metadata: {
+    was_helpful: true,
+    feedback_score: 4
+  }
+});
+```
+
+## Streaming Responses
+
+For a more interactive experience, you can stream responses:
+
+```typescript
+// Create a streaming response
+const stream = await vibingClient.messages.createStream({
+  conversation_id: 'conv_123456',
+  content: 'Generate a long story about space exploration',
+  role: 'user'
+});
+
+// Process the stream
+for await (const chunk of stream) {
+  if (chunk.choices && chunk.choices[0]?.delta?.content) {
+    // Process each chunk of the response
+    process.stdout.write(chunk.choices[0].delta.content);
+  }
+}
+```
+
+## Advanced Features
+
+### Conversation Context
+
+You can provide additional context to a conversation:
+
+```typescript
+// Add context when creating a conversation
+const conversation = await vibingClient.conversations.create({
+  context: [
+    {
+      type: 'text',
+      text: 'This conversation is with a premium customer who has been with us for 5 years.'
+    },
+    {
+      type: 'document',
+      document: {
+        id: 'doc_123',
+        type: 'customer_profile'
+      }
+    }
+  ]
+});
+
+// Add context to an existing conversation
+await vibingClient.conversations.update('conv_123456', {
+  context: [
+    {
+      type: 'text',
+      text: 'Customer just upgraded their subscription plan.'
+    }
+  ],
+  context_behavior: 'append'  // 'replace' | 'append'
+});
+```
+
+### Conversation Settings
+
+Control conversation behavior with settings:
+
+```typescript
+// Set conversation parameters
+const conversation = await vibingClient.conversations.create({
+  settings: {
+    temperature: 0.7,
+    max_tokens: 1000,
+    top_p: 0.95,
+    frequency_penalty: 0.5,
+    presence_penalty: 0.5
+  }
+});
+
+// Update settings later
+await vibingClient.conversations.update('conv_123456', {
+  settings: {
+    temperature: 0.3  // Lower temperature for more focused responses
+  }
+});
+```
+
+### Message Attachments
+
+Add attachments to messages for document processing:
+
+```typescript
+// Send a message with file attachments
+const messageWithAttachment = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: 'Please analyze this document',
+  role: 'user',
+  attachments: [
+    {
+      type: 'file',
+      file_id: 'file_789'  // File previously uploaded
+    }
+  ]
+});
+
+// Upload and attach in one operation
+const file = await vibingClient.files.upload({
+  file: fs.createReadStream('document.pdf'),
+  purpose: 'attachment'
+});
+
+const messageWithUpload = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: 'Please analyze this newly uploaded document',
+  role: 'user',
+  attachments: [
+    {
+      type: 'file',
+      file_id: file.id
+    }
+  ]
+});
+```
+
+### Conversation Tools
+
+Enable tools for conversations:
+
+```typescript
+// Create a conversation with tools enabled
+const conversation = await vibingClient.conversations.create({
+  tools: [
+    {
+      type: 'function',
+      function: {
+        name: 'get_weather',
+        description: 'Get the current weather for a location',
+        parameters: {
+          type: 'object',
+          properties: {
+            location: {
+              type: 'string',
+              description: 'The city and state or country'
+            },
+            unit: {
+              type: 'string',
+              enum: ['celsius', 'fahrenheit'],
+              description: 'The unit of temperature'
+            }
+          },
+          required: ['location']
+        }
+      }
+    }
+  ]
+});
+
+// Handle tool calls
+const message = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: 'What\'s the weather in San Francisco?',
+  role: 'user'
+});
+
+// If the response contains tool calls
+if (message.tool_calls && message.tool_calls.length > 0) {
+  const toolCall = message.tool_calls[0];
+  
+  // Process the tool call (example)
+  let toolResult;
+  if (toolCall.function.name === 'get_weather') {
+    const args = JSON.parse(toolCall.function.arguments);
+    toolResult = await getWeatherData(args.location, args.unit);
+  }
+  
+  // Send the tool result back
+  await vibingClient.messages.create({
+    conversation_id: 'conv_123456',
+    content: null,
+    role: 'tool',
+    tool_call_id: toolCall.id,
+    tool_result: JSON.stringify(toolResult)
+  });
+}
+```
+
+## Real-world Patterns
+
+### Multi-turn Conversations
+
+Managing a conversation that spans multiple turns:
+
+```typescript
+// Start a conversation
+const conversation = await vibingClient.conversations.create({
+  metadata: {
+    user_id: 'user_123'
+  }
+});
+
+// User's first message
+await vibingClient.messages.create({
+  conversation_id: conversation.id,
+  content: 'I want to book a flight to London',
+  role: 'user'
+});
+
+// Get the assistant's response
+const assistantResponse = await vibingClient.messages.create({
+  conversation_id: conversation.id,
+  content: null,  // null triggers the assistant to generate a response
+  role: 'assistant'
+});
+
+// User's follow-up
+await vibingClient.messages.create({
+  conversation_id: conversation.id,
+  content: 'I want to travel next week, from Monday to Friday',
+  role: 'user'
+});
+
+// Assistant's next response
+const followUpResponse = await vibingClient.messages.create({
+  conversation_id: conversation.id,
+  content: null,
+  role: 'assistant'
+});
+```
+
+### Conversation Handoff
+
+Transitioning a conversation from AI to human agent:
+
+```typescript
+// Mark a conversation for human handoff
+await vibingClient.conversations.update('conv_123456', {
+  metadata: {
+    status: 'needs_human',
+    handoff_reason: 'complex_issue',
+    ai_confidence: 'low'
+  }
+});
+
+// Human agent adds their message
+await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: 'This is Sarah from customer support. I understand you're having trouble with your order. Let me help you with that.',
+  role: 'user',
+  metadata: {
+    agent_id: 'agent_789',
+    agent_name: 'Sarah',
+    is_human: true
+  }
+});
+```
+
+### Conversation Analysis
+
+Using metadata to track conversation metrics:
+
+```typescript
+// Update conversation with analytics data
+await vibingClient.conversations.update('conv_123456', {
+  metadata: {
+    duration_seconds: 327,
+    message_count: 12,
+    resolved: true,
+    resolution_type: 'user_satisfied',
+    topic_category: 'billing_question',
+    sentiment_score: 0.8
+  }
+});
+
+// Analyze conversations
+const resolvedConversations = await vibingClient.conversations.list({
+  filter: {
+    'metadata.resolved': true,
+    created_after: '2023-06-01T00:00:00Z'
+  },
+  limit: 100
+});
+
+// Calculate resolution rate
+const allConversations = await vibingClient.conversations.list({
+  filter: {
+    created_after: '2023-06-01T00:00:00Z'
+  },
+  limit: 100
+});
+
+const resolutionRate = resolvedConversations.data.length / allConversations.data.length;
+console.log(`Resolution rate: ${resolutionRate * 100}%`);
+```
+
+## Best Practices
+
+### Conversation Management
+
+1. **Use meaningful metadata**: Add user_id, session_id, and other relevant information to make conversations easily searchable.
+
+2. **Set appropriate TTL**: Define how long conversations should be kept active:
+
+```typescript
+const conversation = await vibingClient.conversations.create({
+  ttl: 60 * 60 * 24 * 7  // 7 days in seconds
+});
+```
+
+3. **Implement conversation archiving**: Move inactive conversations to an archived state:
+
+```typescript
+await vibingClient.conversations.update('conv_123456', {
+  status: 'archived'
+});
+```
+
+4. **Paginate efficiently**: When retrieving large numbers of conversations or messages:
+
+```typescript
+let allConversations = [];
+let hasMore = true;
+let cursor = null;
+
+while (hasMore) {
+  const result = await vibingClient.conversations.list({
+    limit: 50,
+    after: cursor
+  });
+  
+  allConversations = [...allConversations, ...result.data];
+  hasMore = result.has_more;
+  cursor = result.data[result.data.length - 1]?.id;
+}
+```
+
+### Memory and Context Management
+
+1. **Utilize memory for persistent context**:
+
+```typescript
+// Add conversation context from memory
+const memories = await vibingClient.memory.search({
+  query: 'user preferences',
+  filter: {
+    user_id: 'user_123'
+  }
+});
+
+await vibingClient.conversations.update('conv_123456', {
+  context: memories.map(memory => ({
+    type: 'text',
+    text: memory.content.data
+  }))
+});
+```
+
+2. **Summarize long conversations**:
+
+```typescript
+// Add a summary to the conversation
+const summary = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: 'Please summarize our conversation so far.',
+  role: 'user'
+});
+
+const assistantSummary = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: null,
+  role: 'assistant'
+});
+
+// Store the summary in memory
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: assistantSummary.content
+  },
+  context: {
+    user_id: 'user_123',
+    conversation_id: 'conv_123456',
+    type: 'conversation_summary'
+  }
+});
+```
+
+### Error Handling
+
+Implement robust error handling:
+
+```typescript
+try {
+  const conversation = await vibingClient.conversations.create();
+  // Process conversation
+} catch (error) {
+  if (error.type === 'rate_limit_exceeded') {
+    console.error('Rate limit exceeded, retrying after delay');
+    // Implement exponential backoff
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Retry the operation
+  } else if (error.type === 'invalid_request_error') {
+    console.error('Invalid request:', error.message);
+    // Log the error and fix the request parameters
+  } else {
+    console.error('Unexpected error:', error);
+    // Handle other types of errors
+  }
+}
+```
+
+## Integration Examples
+
+### Web Chat Interface
+
+```typescript
+// Frontend code (React example)
+function ChatInterface() {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const [conversationId, setConversationId] = useState(null);
+  
+  useEffect(() => {
+    // Create a new conversation when component mounts
+    async function createConversation() {
+      const response = await fetch('/api/conversations', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      setConversationId(data.id);
+    }
+    
+    createConversation();
+  }, []);
+  
+  async function sendMessage() {
+    if (!input.trim() || !conversationId) return;
+    
+    // Add user message to UI
+    setMessages(prev => [...prev, { content: input, role: 'user' }]);
+    setInput('');
+    
+    // Send to backend
+    const response = await fetch('/api/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        conversationId,
+        content: input,
+        role: 'user'
+      })
+    });
+    
+    // Get assistant's response
+    const assistantResponse = await fetch('/api/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        conversationId,
+        role: 'assistant'
+      })
+    });
+    
+    const data = await assistantResponse.json();
+    setMessages(prev => [...prev, { content: data.content, role: 'assistant' }]);
+  }
+  
+  return (
+    <div className="chat-container">
+      <div className="messages">
+        {messages.map((msg, i) => (
+          <div key={i} className={`message ${msg.role}`}>
+            {msg.content}
+          </div>
+        ))}
+      </div>
+      <div className="input-area">
+        <input 
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyPress={e => e.key === 'Enter' && sendMessage()}
+          placeholder="Type a message..."
+        />
+        <button onClick={sendMessage}>Send</button>
+      </div>
+    </div>
+  );
+}
+
+// Backend code (Node.js with Express)
+app.post('/api/conversations', async (req, res) => {
+  try {
+    const conversation = await vibingClient.conversations.create({
+      metadata: {
+        user_id: req.user.id  // From your auth system
+      }
+    });
+    res.json(conversation);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/messages', async (req, res) => {
+  try {
+    const { conversationId, content, role } = req.body;
+    
+    const message = await vibingClient.messages.create({
+      conversation_id: conversationId,
+      content,
+      role
+    });
+    
+    res.json(message);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+### Mobile App Integration
+
+```typescript
+// React Native example
+function ChatScreen() {
+  // ... similar to web interface with mobile-specific UI components
+  
+  // Function to handle file attachments
+  async function handleAttachment() {
+    // Use image picker or document picker
+    const result = await DocumentPicker.pick({
+      type: [DocumentPicker.types.images, DocumentPicker.types.pdf]
+    });
+    
+    // Upload file
+    const formData = new FormData();
+    formData.append('file', {
+      uri: result.uri,
+      type: result.type,
+      name: result.name
+    });
+    formData.append('purpose', 'attachment');
+    
+    const uploadResponse = await fetch('/api/files/upload', {
+      method: 'POST',
+      body: formData
+    });
+    
+    const fileData = await uploadResponse.json();
+    
+    // Send message with attachment
+    const messageResponse = await fetch('/api/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        conversationId,
+        content: 'Please analyze this file',
+        role: 'user',
+        attachments: [{
+          type: 'file',
+          file_id: fileData.id
+        }]
+      })
+    });
+    
+    // Handle response...
+  }
+  
+  // ... rest of component
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Conversation not found**: Verify the conversation ID and check if it was deleted or archived.
+
+2. **Rate limits**: Implement retries with exponential backoff for rate limit errors.
+
+3. **Token limits exceeded**: If you receive errors about exceeding token limits:
+   - Summarize long conversations
+   - Use more focused system messages
+   - Implement conversation pruning to remove older messages
+
+4. **Slow response times**: 
+   - Use streaming for better user experience
+   - Optimize your conversation context size
+   - Pre-compute and store frequently used context in memory
+
+## Next Steps
+
+Now that you've mastered conversations, you might want to explore:
+
+- [Memory Integration](/guides/memory) - Learn how to use memory for persistent context
+- [Building Assistants](/guides/assistants) - Create custom AI assistants that can engage in conversations
+- [Authentication](/guides/authentication) - Implement secure authentication for your users 

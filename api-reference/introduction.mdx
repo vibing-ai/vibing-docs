@@ -1,33 +1,98 @@
 ---
 title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+description: 'Overview of the Vibing AI API platform'
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+# Vibing AI API Reference
 
-## Welcome
+The Vibing AI API is a comprehensive set of interfaces that powers the Vibing AI platform, facilitating communication between platform components, third-party applications, and external services.
 
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
+> **Note**: The Vibing AI platform requires Node.js ≥ 20.6.0 LTS
 
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+## Core Principles
 
-## Authentication
+The API is designed with several key principles in mind:
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+- **Security First**: Rigorous security measures with OAuth 2.1, PKCE, and advanced threat protection
+- **Developer Experience**: Intuitive interfaces with comprehensive documentation and SDK support
+- **Performance Optimized**: High throughput with low latency, designed for scale
+- **Platform Integration**: Seamless connectivity across all platform components
+- **Extensibility**: Flexible architecture allowing for future expansion
 
-```json
-"security": [
-  {
-    "bearerAuth": []
-  }
-]
+## Architecture Overview
+
+The Vibing AI API follows a layered architecture approach:
+
 ```
+┌─────────────────────────────────────────────────────────────┐
+│                 Client Applications                         │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│                       API Gateway                           │
+│                  (Kong Gateway → AWS API Gateway)           │
+└───┬───────────────────┬───────────────────┬─────────────────┘
+    │                   │                   │
+┌───▼───────┐     ┌─────▼─────┐      ┌──────▼──────┐
+│ Auth API  │     │ Memory API │      │ Developer  │
+│ (Fastify  │     │ (Fastify   │      │ API        │
+│ on Lambda)│     │ on Lambda) │      │ (Fastify   │
+└───┬───────┘     └─────┬─────┘      │ on Lambda)  │
+    │                   │            └──────┬──────┘
+    │                   │                   │
+┌───▼───────────────────▼───────────────────▼──────┐
+│              Service Layer                       │
+└───┬───────────────────┬───────────────────┬──────┘
+    │                   │                   │
+┌───▼───────┐     ┌─────▼─────┐      ┌──────▼──────┐
+│ Auth      │     │ Memory    │      │ App Registry│
+│ Service   │     │ Service   │      │ Service     │
+└───┬───────┘     └─────┬─────┘      └──────┬──────┘
+    │                   │                   │
+┌───▼───────────────────▼───────────────────▼──────┐
+│              Infrastructure Layer                │
+└───────────────────────────────────────────────────┘
+```
+
+## Key Components
+
+- **API Gateway**: Centralized entry point for all API requests
+- **Auth API**: OAuth 2.1 implementation with PKCE, token management, and permissions
+- **Memory API**: Memory storage and retrieval with vector search capabilities
+- **Developer API**: App submission, management, and analytics
+- **Event System**: Real-time communication between components
+
+## Core Endpoints
+
+The API provides endpoints for:
+
+- Authentication and authorization
+- User and profile management
+- Unified Memory System access
+- Vibing Super Agent interaction
+- Developer app submission and management
+- Event publication and subscription
+- System status and health checks
+
+## Technology Stack
+
+- **Gateway**: Kong Gateway (edge) → AWS API Gateway → Fastify on Lambda (Node 20)
+- **Backend**: Node.js ≥ 20.6.0 LTS with Fastify on Lambda
+- **Authentication**: OAuth 2.1 with PKCE, JWT
+- **Database**: PostgreSQL with pgvector extension
+- **Caching**: Redis for token storage and rate limiting
+- **Observability**: OpenTelemetry for tracing and metrics
+- **Documentation**: OpenAPI 3.1 and AsyncAPI 2.6 (with migration path to 3.0)
+- **Security**: TLS 1.3, OWASP security best practices
+
+## Implementation Approach
+
+The API follows a phased implementation approach divided into three strategic stages:
+
+1. **Foundation**: Core infrastructure and essential functionality
+2. **Enhancement**: Advanced capabilities for security, scalability, and developer experience
+3. **Optimization**: Enterprise-grade features, optimizations, and advanced security
+
+## Getting Started
+
+To begin using the Vibing AI API, follow the authentication guides and explore the endpoint references in this documentation.

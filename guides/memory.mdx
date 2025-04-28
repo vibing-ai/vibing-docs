@@ -1,0 +1,1077 @@
+---
+title: 'Memory'
+description: 'Learn how to use persistent memory to enhance AI interactions'
+---
+
+# Memory Integration Guide
+
+This guide covers how to use Vibing AI's memory system to provide persistent context across user interactions, enabling more personalized and contextually aware AI experiences.
+
+## Understanding Memory
+
+Memory in Vibing AI allows you to:
+
+- Store and retrieve information about users across sessions
+- Provide long-term context to conversations
+- Create personalized experiences based on user history
+- Implement knowledge bases that the AI can reference
+- Build applications with memory of past interactions
+
+Memory is implemented as a vector database optimized for semantic search, allowing you to retrieve relevant information based on meaning rather than exact keyword matches.
+
+## Basic Memory Operations
+
+### Storing Information
+
+Store information in memory:
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY
+});
+
+// Store a simple text memory
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'User prefers dark mode in the application UI.'
+  },
+  context: {
+    user_id: 'user_123',
+    type: 'preference'
+  }
+});
+
+// Store structured data
+await vibingClient.memory.store({
+  content: {
+    type: 'application/json',
+    data: {
+      theme: 'dark',
+      fontSize: 'large',
+      notifications: {
+        email: true,
+        push: false
+      }
+    }
+  },
+  context: {
+    user_id: 'user_123',
+    type: 'settings'
+  }
+});
+
+// Store from conversation
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'The user mentioned they have a peanut allergy.'
+  },
+  context: {
+    user_id: 'user_123',
+    conversation_id: 'conv_456',
+    type: 'health_info'
+  }
+});
+```
+
+### Retrieving by ID
+
+Get a specific memory item:
+
+```typescript
+// Retrieve a memory by ID
+const memory = await vibingClient.memory.retrieve('mem_123456');
+console.log(memory.content.data);
+```
+
+### Searching Memories
+
+Search for relevant memories:
+
+```typescript
+// Basic search
+const memories = await vibingClient.memory.search({
+  query: 'user preferences',
+  limit: 5
+});
+
+// Search with context filters
+const userMemories = await vibingClient.memory.search({
+  query: 'allergies',
+  filter: {
+    user_id: 'user_123',
+    type: 'health_info'
+  },
+  limit: 10
+});
+
+// Search using vector embedding
+const embedding = await vibingClient.embeddings.create({
+  input: 'What are the user\'s food preferences?'
+});
+
+const semanticSearch = await vibingClient.memory.search({
+  embedding: embedding.data[0].embedding,
+  filter: {
+    user_id: 'user_123'
+  },
+  limit: 5
+});
+```
+
+### Updating Memory
+
+Update existing memory:
+
+```typescript
+// Update a memory item
+await vibingClient.memory.update('mem_123456', {
+  content: {
+    type: 'text/plain',
+    data: 'User now prefers light mode in the application UI.'
+  }
+});
+
+// Update context metadata
+await vibingClient.memory.update('mem_123456', {
+  context: {
+    importance: 'high',
+    last_confirmed: new Date().toISOString()
+  }
+});
+```
+
+### Deleting Memory
+
+Remove memories:
+
+```typescript
+// Delete a specific memory
+await vibingClient.memory.delete('mem_123456');
+
+// Batch delete memories matching criteria
+await vibingClient.memory.batchDelete({
+  filter: {
+    user_id: 'user_123',
+    type: 'temporary_preference',
+    created_before: '2023-01-01T00:00:00Z'
+  }
+});
+```
+
+## Memory Organization
+
+### Context and Metadata
+
+Use context to organize memories:
+
+```typescript
+// Storing organized memories
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'User is interested in machine learning and data science.'
+  },
+  context: {
+    user_id: 'user_123',
+    category: 'interests',
+    source: 'profile_survey',
+    confidence: 0.95
+  }
+});
+
+// Retrieving with specific context
+const interests = await vibingClient.memory.search({
+  filter: {
+    user_id: 'user_123',
+    category: 'interests',
+    confidence: { $gt: 0.8 }
+  },
+  limit: 10
+});
+```
+
+### Memory Types
+
+Different types of memories for different purposes:
+
+```typescript
+// Factual information
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'User\'s name is Alex Chen.'
+  },
+  context: {
+    user_id: 'user_123',
+    type: 'profile_fact'
+  }
+});
+
+// Preference information
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'User prefers vegetarian food options.'
+  },
+  context: {
+    user_id: 'user_123',
+    type: 'preference'
+  }
+});
+
+// Conversation summary
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'User discussed travel plans to Japan in October 2023.'
+  },
+  context: {
+    user_id: 'user_123',
+    type: 'conversation_summary',
+    conversation_id: 'conv_456'
+  }
+});
+
+// Knowledge base entry
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'Our premium subscription costs $19.99/month and includes priority support.'
+  },
+  context: {
+    type: 'knowledge_base',
+    category: 'pricing',
+    last_updated: new Date().toISOString()
+  }
+});
+```
+
+## Advanced Memory Usage
+
+### Memory in Conversations
+
+Integrate memory with conversations:
+
+```typescript
+// Search for relevant memories before response
+const userMessage = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: 'What was that book you recommended to me?',
+  role: 'user'
+});
+
+// Search memory for relevant information
+const bookRecommendations = await vibingClient.memory.search({
+  query: 'book recommendation',
+  filter: {
+    user_id: 'user_123'
+  },
+  limit: 3
+});
+
+// Include memory in conversation context
+await vibingClient.conversations.update('conv_123456', {
+  context: bookRecommendations.map(memory => ({
+    type: 'text',
+    text: memory.content.data
+  })),
+  context_behavior: 'append'
+});
+
+// Generate response with memory context
+const assistantResponse = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  role: 'assistant'
+});
+```
+
+### Memory Extraction
+
+Extract information from conversations:
+
+```typescript
+// Analyze conversation to extract memories
+const conversation = await vibingClient.conversations.retrieve('conv_123456', {
+  expand: ['messages']
+});
+
+// Extract structured information
+const extractionPrompt = `
+Based on the conversation, extract the following information:
+1. User preferences
+2. Personal facts
+3. Future plans
+Format as JSON with categories as keys.
+`;
+
+const extraction = await vibingClient.completions.create({
+  messages: [
+    {
+      role: 'system',
+      content: extractionPrompt
+    },
+    ...conversation.messages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }))
+  ],
+  response_format: { type: 'json_object' }
+});
+
+// Parse and store extracted memories
+const extractedData = JSON.parse(extraction.choices[0].message.content);
+
+// Store each category of extracted information
+for (const category in extractedData) {
+  if (Array.isArray(extractedData[category])) {
+    for (const item of extractedData[category]) {
+      await vibingClient.memory.store({
+        content: {
+          type: 'text/plain',
+          data: item
+        },
+        context: {
+          user_id: 'user_123',
+          type: category,
+          source: 'conversation_extraction',
+          conversation_id: 'conv_123456'
+        }
+      });
+    }
+  }
+}
+```
+
+### Memory with Embedding Models
+
+Use custom embeddings for specialized memory applications:
+
+```typescript
+// Generate custom embeddings
+const embedding = await vibingClient.embeddings.create({
+  model: 'specialized-embedding-model',
+  input: 'User expressed interest in machine learning frameworks.'
+});
+
+// Store with the custom embedding
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'User expressed interest in machine learning frameworks.'
+  },
+  embedding: embedding.data[0].embedding,
+  context: {
+    user_id: 'user_123',
+    type: 'interest',
+    category: 'technical'
+  }
+});
+
+// Search using embedding similarity
+const similarInterests = await vibingClient.memory.search({
+  embedding: embedding.data[0].embedding,
+  filter: {
+    type: 'interest'
+  },
+  limit: 5
+});
+```
+
+## Real-world Patterns
+
+### User Profile Building
+
+Progressively build a user profile:
+
+```typescript
+// Function to extract and store profile information
+async function updateUserProfile(userId, conversationId) {
+  // Get the conversation with messages
+  const conversation = await vibingClient.conversations.retrieve(conversationId, {
+    expand: ['messages']
+  });
+  
+  // Extract profile information
+  const profilePrompt = `
+    Based on this conversation, update the user profile.
+    Extract any new information about:
+    - Name, location, occupation
+    - Preferences, interests, hobbies
+    - Skills, expertise
+    - Goals, challenges
+    Return as JSON with these category keys and array values.
+  `;
+  
+  const extraction = await vibingClient.completions.create({
+    messages: [
+      { role: 'system', content: profilePrompt },
+      ...conversation.messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+    ],
+    response_format: { type: 'json_object' }
+  });
+  
+  const profileData = JSON.parse(extraction.choices[0].message.content);
+  
+  // Store each piece of profile information
+  for (const category in profileData) {
+    if (Array.isArray(profileData[category])) {
+      for (const item of profileData[category]) {
+        // Check if this information is new
+        const existing = await vibingClient.memory.search({
+          query: item,
+          filter: {
+            user_id: userId,
+            type: 'profile',
+            category: category
+          },
+          limit: 1,
+          threshold: 0.95  // High similarity threshold
+        });
+        
+        // Only store if not already known (no similar memories found)
+        if (existing.length === 0) {
+          await vibingClient.memory.store({
+            content: {
+              type: 'text/plain',
+              data: item
+            },
+            context: {
+              user_id: userId,
+              type: 'profile',
+              category: category,
+              source: 'conversation',
+              conversation_id: conversationId,
+              confidence: 0.8,
+              last_updated: new Date().toISOString()
+            }
+          });
+        }
+      }
+    }
+  }
+}
+
+// Call after meaningful conversations
+await updateUserProfile('user_123', 'conv_456');
+```
+
+### Personalized Recommendations
+
+Use memory to power recommendations:
+
+```typescript
+// Get user interests from memory
+const interests = await vibingClient.memory.search({
+  filter: {
+    user_id: 'user_123',
+    type: 'interest'
+  },
+  limit: 10
+});
+
+// Format interests for recommendation prompt
+const interestTexts = interests.map(memory => memory.content.data).join('\n- ');
+
+// Generate recommendations
+const recommendationPrompt = `
+Based on the user's interests:
+- ${interestTexts}
+
+Recommend 3 products from our catalog that they might like.
+`;
+
+const recommendations = await vibingClient.completions.create({
+  messages: [
+    { role: 'system', content: recommendationPrompt },
+    { role: 'user', content: 'What products would I like?' }
+  ]
+});
+
+// Store the recommendations in memory
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: recommendations.choices[0].message.content
+  },
+  context: {
+    user_id: 'user_123',
+    type: 'recommendation',
+    category: 'products',
+    created_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 1 week expiry
+  }
+});
+```
+
+### Knowledge Augmentation
+
+Enhance AI with domain-specific knowledge:
+
+```typescript
+// Store company product information
+const products = [
+  { name: 'Product A', description: 'Advanced analytics platform', price: '$99/month' },
+  { name: 'Product B', description: 'Customer engagement tool', price: '$49/month' },
+  { name: 'Product C', description: 'Data visualization suite', price: '$79/month' }
+];
+
+// Store each product in memory
+for (const product of products) {
+  await vibingClient.memory.store({
+    content: {
+      type: 'application/json',
+      data: product
+    },
+    context: {
+      type: 'knowledge_base',
+      category: 'products',
+      last_updated: new Date().toISOString()
+    }
+  });
+}
+
+// Use knowledge in a conversation
+const query = 'Tell me about your products and pricing';
+
+// Find relevant product information
+const productInfo = await vibingClient.memory.search({
+  query: query,
+  filter: {
+    type: 'knowledge_base',
+    category: 'products'
+  },
+  limit: 5
+});
+
+// Add to conversation context
+await vibingClient.conversations.update('conv_123456', {
+  context: productInfo.map(memory => ({
+    type: 'text',
+    text: JSON.stringify(memory.content.data)
+  }))
+});
+
+// Generate response with product knowledge
+const response = await vibingClient.messages.create({
+  conversation_id: 'conv_123456',
+  content: query,
+  role: 'user'
+});
+```
+
+## Integration Examples
+
+### Web Application with User Memory
+
+```typescript
+// Backend API (Express.js example)
+app.post('/api/profile/update', async (req, res) => {
+  try {
+    const { userId } = req.user; // From authentication middleware
+    const { interests, preferences, goals } = req.body;
+    
+    // Store each category in memory
+    await storeMemoryBatch(userId, 'interests', interests);
+    await storeMemoryBatch(userId, 'preferences', preferences);
+    await storeMemoryBatch(userId, 'goals', goals);
+    
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Helper function to store a batch of memory items
+async function storeMemoryBatch(userId, category, items) {
+  for (const item of items) {
+    await vibingClient.memory.store({
+      content: {
+        type: 'text/plain',
+        data: item
+      },
+      context: {
+        user_id: userId,
+        type: 'profile',
+        category: category,
+        source: 'user_input',
+        last_updated: new Date().toISOString()
+      }
+    });
+  }
+}
+
+// API endpoint for personalized chat
+app.post('/api/chat', async (req, res) => {
+  try {
+    const { userId } = req.user; // From authentication middleware
+    const { message, conversationId } = req.body;
+    
+    // Create conversation if needed
+    let currentConversationId = conversationId;
+    if (!currentConversationId) {
+      const conversation = await vibingClient.conversations.create({
+        metadata: { user_id: userId }
+      });
+      currentConversationId = conversation.id;
+    }
+    
+    // Get relevant memories
+    const relevantMemories = await vibingClient.memory.search({
+      query: message,
+      filter: { user_id: userId },
+      limit: 5
+    });
+    
+    // Add memories to conversation context
+    if (relevantMemories.length > 0) {
+      await vibingClient.conversations.update(currentConversationId, {
+        context: relevantMemories.map(memory => ({
+          type: 'text',
+          text: memory.content.data
+        })),
+        context_behavior: 'append'
+      });
+    }
+    
+    // Add user message
+    await vibingClient.messages.create({
+      conversation_id: currentConversationId,
+      content: message,
+      role: 'user'
+    });
+    
+    // Get AI response
+    const response = await vibingClient.messages.create({
+      conversation_id: currentConversationId,
+      role: 'assistant'
+    });
+    
+    // Return the response and conversation ID
+    res.json({
+      message: response.content,
+      conversationId: currentConversationId
+    });
+    
+    // Asynchronously extract and store new information
+    updateUserProfile(userId, currentConversationId).catch(console.error);
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+### Mobile App with Offline Memory Sync
+
+```typescript
+// React Native example
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Store local memory items when offline
+async function storeLocalMemory(userId, content, context) {
+  try {
+    // Get existing offline memory items
+    const offlineMemoryString = await AsyncStorage.getItem('offline_memory');
+    const offlineMemory = offlineMemoryString 
+      ? JSON.parse(offlineMemoryString) 
+      : [];
+    
+    // Add new memory item
+    offlineMemory.push({
+      userId,
+      content,
+      context,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Save updated list
+    await AsyncStorage.setItem('offline_memory', JSON.stringify(offlineMemory));
+    
+    return true;
+  } catch (error) {
+    console.error('Error storing local memory:', error);
+    return false;
+  }
+}
+
+// Sync offline memory when back online
+async function syncOfflineMemory() {
+  try {
+    // Check for offline memories
+    const offlineMemoryString = await AsyncStorage.getItem('offline_memory');
+    if (!offlineMemoryString) return;
+    
+    const offlineMemory = JSON.parse(offlineMemoryString);
+    if (!offlineMemory.length) return;
+    
+    // Sync each memory item
+    const failedSync = [];
+    
+    for (const memoryItem of offlineMemory) {
+      try {
+        await vibingClient.memory.store({
+          content: memoryItem.content,
+          context: {
+            ...memoryItem.context,
+            synced_from_offline: true,
+            original_timestamp: memoryItem.timestamp
+          }
+        });
+      } catch (error) {
+        console.error('Failed to sync memory item:', error);
+        failedSync.push(memoryItem);
+      }
+    }
+    
+    // Update storage with only failed items
+    if (failedSync.length) {
+      await AsyncStorage.setItem('offline_memory', JSON.stringify(failedSync));
+    } else {
+      await AsyncStorage.removeItem('offline_memory');
+    }
+    
+    return {
+      total: offlineMemory.length,
+      synced: offlineMemory.length - failedSync.length,
+      failed: failedSync.length
+    };
+  } catch (error) {
+    console.error('Error syncing offline memory:', error);
+    throw error;
+  }
+}
+
+// Usage in a React Native component
+function ProfileScreen() {
+  // ...component state and logic
+  
+  // Function to add user preference
+  async function addPreference(preference) {
+    try {
+      const isOnline = await NetInfo.fetch().then(state => state.isConnected);
+      
+      if (isOnline) {
+        // Direct API call if online
+        await vibingClient.memory.store({
+          content: {
+            type: 'text/plain',
+            data: preference
+          },
+          context: {
+            user_id: userId,
+            type: 'preference',
+            source: 'mobile_app'
+          }
+        });
+      } else {
+        // Store locally if offline
+        await storeLocalMemory(userId, 
+          { type: 'text/plain', data: preference },
+          { user_id: userId, type: 'preference', source: 'mobile_app' }
+        );
+        
+        // Show notification
+        Alert.alert('Saved locally', 'Your preference will sync when you\'re back online.');
+      }
+      
+      // Update UI
+      setPreferences([...preferences, preference]);
+      
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save preference.');
+      console.error(error);
+    }
+  }
+  
+  // Use effect to sync when app comes online
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(async state => {
+      if (state.isConnected) {
+        try {
+          const syncResult = await syncOfflineMemory();
+          if (syncResult && syncResult.synced > 0) {
+            Alert.alert('Sync complete', `Synced ${syncResult.synced} items. Failed: ${syncResult.failed}`);
+          }
+        } catch (error) {
+          console.error('Sync error:', error);
+        }
+      }
+    });
+    
+    return () => unsubscribe();
+  }, []);
+  
+  // Rest of component...
+}
+```
+
+## Best Practices
+
+### Memory Organization
+
+1. **Use consistent context fields**
+   - Always include `user_id` for user-specific memories
+   - Use `type` to categorize memories (profile, preference, knowledge, etc.)
+   - Include `source` to track where the information came from
+   - Add timestamps for freshness assessment
+
+2. **Balance detail and relevance**
+   - Store specific, discrete pieces of information rather than large chunks
+   - Break down complex information into smaller, searchable memories
+   - Include enough context to make the memory useful when retrieved
+   - Avoid storing redundant information
+
+3. **Implement memory TTL (Time To Live)**
+   - Set expiration for time-sensitive information:
+
+```typescript
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'User is interested in summer vacation packages.'
+  },
+  context: {
+    user_id: 'user_123',
+    type: 'interest',
+    temporary: true,
+    expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
+  }
+});
+
+// Clean up expired memories with a scheduled job
+async function cleanupExpiredMemories() {
+  const currentTime = new Date().toISOString();
+  
+  await vibingClient.memory.batchDelete({
+    filter: {
+      expires_at: { $lt: currentTime }
+    }
+  });
+}
+```
+
+### Data Privacy and Security
+
+1. **Implement memory access controls**
+
+```typescript
+// Memory access middleware (Express.js example)
+function validateMemoryAccess(req, res, next) {
+  const { userId } = req.user; // From your authentication
+  const requestedUserId = req.params.userId || req.body.userId;
+  
+  // Only allow access to the authenticated user's memories
+  if (userId !== requestedUserId) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  
+  next();
+}
+
+// Apply to routes
+app.get('/api/user/:userId/memories', validateMemoryAccess, async (req, res) => {
+  // Handle memory retrieval
+});
+```
+
+2. **Implement memory retention policies**
+
+```typescript
+// Consent status tracking
+await vibingClient.memory.store({
+  content: {
+    type: 'application/json',
+    data: {
+      profile_data: true,
+      preferences: true,
+      conversation_history: false
+    }
+  },
+  context: {
+    user_id: 'user_123',
+    type: 'consent_record',
+    timestamp: new Date().toISOString()
+  }
+});
+
+// Function to apply user consent changes
+async function updateUserConsent(userId, consentChanges) {
+  // Update consent record
+  const currentConsent = await vibingClient.memory.search({
+    filter: {
+      user_id: userId,
+      type: 'consent_record'
+    },
+    limit: 1
+  });
+  
+  if (currentConsent.length > 0) {
+    const existingConsent = currentConsent[0].content.data;
+    const updatedConsent = { ...existingConsent, ...consentChanges };
+    
+    await vibingClient.memory.update(currentConsent[0].id, {
+      content: {
+        type: 'application/json',
+        data: updatedConsent
+      }
+    });
+    
+    // If consent revoked for any category, delete those memories
+    for (const [category, hasConsent] of Object.entries(consentChanges)) {
+      if (!hasConsent) {
+        await vibingClient.memory.batchDelete({
+          filter: {
+            user_id: userId,
+            category: category
+          }
+        });
+      }
+    }
+  }
+}
+```
+
+### Memory Maintenance
+
+1. **Implement memory verification loops**
+
+```typescript
+// Verify and update important memories periodically
+async function verifyUserPreferences(userId) {
+  // Get current preferences
+  const preferences = await vibingClient.memory.search({
+    filter: {
+      user_id: userId,
+      type: 'preference',
+      verified: { $ne: true } // Only unverified preferences
+    },
+    limit: 20
+  });
+  
+  if (preferences.length === 0) return;
+  
+  // Create a verification conversation
+  const conversation = await vibingClient.conversations.create({
+    metadata: { user_id: userId, purpose: 'preference_verification' }
+  });
+  
+  // Add system message with instructions
+  await vibingClient.messages.create({
+    conversation_id: conversation.id,
+    content: `Verify if the following preferences are still accurate for the user. Ask naturally and conversationally.`,
+    role: 'system'
+  });
+  
+  // Each preference becomes a question
+  for (const pref of preferences) {
+    // Generate a natural question about the preference
+    const question = `I recall that ${pref.content.data}. Is that still accurate?`;
+    
+    // Add the question to the conversation
+    await vibingClient.messages.create({
+      conversation_id: conversation.id,
+      content: question,
+      role: 'assistant',
+      metadata: { preference_id: pref.id }
+    });
+    
+    // The actual verification would happen in a real conversation with the user
+    // This is just setting up the verification process
+  }
+  
+  return conversation.id;
+}
+```
+
+2. **Implement confidence scoring**
+
+```typescript
+// Store memories with confidence scores
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'User prefers vegetarian food options.'
+  },
+  context: {
+    user_id: 'user_123',
+    type: 'preference',
+    category: 'food',
+    confidence: 0.85,
+    source: 'conversation_inference'
+  }
+});
+
+// Increase confidence when information is confirmed
+async function updateConfidence(memoryId, newEvidence) {
+  const memory = await vibingClient.memory.retrieve(memoryId);
+  
+  let newConfidence = memory.context.confidence || 0.5;
+  
+  if (newEvidence === 'confirmed') {
+    // Increase confidence, but never exceed 1.0
+    newConfidence = Math.min(newConfidence + 0.15, 1.0);
+  } else if (newEvidence === 'contradicted') {
+    // Decrease confidence
+    newConfidence = Math.max(newConfidence - 0.3, 0.0);
+  }
+  
+  await vibingClient.memory.update(memoryId, {
+    context: {
+      confidence: newConfidence,
+      last_updated: new Date().toISOString()
+    }
+  });
+  
+  // If confidence drops too low, flag for verification or removal
+  if (newConfidence < 0.3) {
+    await vibingClient.memory.update(memoryId, {
+      context: {
+        needs_verification: true,
+        low_confidence_flag: true
+      }
+    });
+  }
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Memories not being retrieved**
+   - Check context filters are consistent across storage and retrieval
+   - Verify the query or embedding is relevant to the stored content
+   - Try increasing the `limit` parameter
+   - Adjust the similarity threshold if using semantic search
+
+2. **Too many irrelevant memories**
+   - Make queries more specific
+   - Add more restrictive filters
+   - Reduce the `limit` parameter
+   - Increase the similarity threshold
+
+3. **Performance issues**
+   - Implement batching for storing multiple memories
+   - Use pagination when retrieving large memory sets
+   - Consider cleaning up stale or low-confidence memories
+   - Index frequently used context fields
+
+4. **Memory conflicts**
+   - Implement versioning in your context metadata
+   - Use timestamp fields to track when information was updated
+   - Develop conflict resolution strategies for contradicting information
+
+## Next Steps
+
+After implementing memory integration, you might be interested in:
+
+- [Conversations](/guides/conversations) - Build richer conversational experiences with memory context
+- [Assistants](/guides/assistants) - Create custom assistants with specialized memory capabilities
+- [Memory Analytics](/guides/analytics) - Analyze and optimize your memory usage 

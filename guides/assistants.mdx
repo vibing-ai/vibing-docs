@@ -1,0 +1,235 @@
+---
+title: 'Assistants'
+description: 'Building intelligent AI assistants with persistent memory and powerful reasoning capabilities'
+---
+
+## Introduction
+
+Assistants in Vibing AI are intelligent agents that can engage in meaningful conversations, perform tasks, and maintain context over time. With the power of large language models and persistent memory, assistants can provide personalized experiences to your users.
+
+## Creating an Assistant
+
+To create a new assistant, use the `createAssistant` method:
+
+```typescript
+import { vibing } from '@vibing/sdk';
+
+// Create a new assistant
+const assistant = await vibing.assistants.create({
+  name: "Customer Support Agent",
+  instructions: "You are a helpful customer support agent for Acme Inc. Answer questions about our products and services.",
+  metadata: {
+    department: "customer_support",
+    specialty: "technical_issues"
+  }
+});
+
+console.log(`Assistant created with ID: ${assistant.id}`);
+```
+
+### Assistant Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `name` | string | A descriptive name for your assistant |
+| `instructions` | string | Detailed instructions that define the assistant's behavior |
+| `metadata` | object | Optional key-value pairs for organizing assistants |
+| `tools` | array | Optional list of tools the assistant can use |
+
+## Retrieving Assistants
+
+Fetch a specific assistant or list all assistants:
+
+```typescript
+// Get a specific assistant
+const assistant = await vibing.assistants.retrieve('asst_123456789');
+
+// List all assistants
+const assistants = await vibing.assistants.list();
+```
+
+## Updating Assistants
+
+Modify an existing assistant's properties:
+
+```typescript
+const updatedAssistant = await vibing.assistants.update('asst_123456789', {
+  name: "Premium Customer Support",
+  instructions: "You are a premium support agent for VIP customers. Provide exceptional service.",
+  metadata: {
+    department: "premium_support",
+    priority: "high"
+  }
+});
+```
+
+## Deleting Assistants
+
+Remove an assistant when no longer needed:
+
+```typescript
+const deleted = await vibing.assistants.delete('asst_123456789');
+```
+
+## Assistant Instructions
+
+Well-crafted instructions are crucial for an assistant's performance. Instructions should:
+
+1. **Define the role** - Specify who the assistant is and what it does
+2. **Set boundaries** - Clarify what topics are in/out of scope
+3. **Establish tone** - Define the communication style and personality
+4. **Provide domain knowledge** - Include essential information for the assistant's role
+
+Example instructions:
+
+```
+You are SalesBot, a sales assistant for TechGadgets Inc. 
+
+Your responsibilities:
+- Answer questions about our product catalog (smartphones, laptops, accessories)
+- Recommend products based on customer needs
+- Explain basic technical specifications
+- Provide information about pricing and availability
+
+Never:
+- Process payments or handle sensitive customer information
+- Make promises about delivery dates
+- Discuss competitors' products in detail
+- Provide technical support for product issues
+
+Maintain a friendly, helpful tone while being concise and accurate. When uncertain, ask clarifying questions rather than making assumptions.
+```
+
+## Integrating with Conversations
+
+Assistants are designed to interact with users through conversations:
+
+```typescript
+// Create a new conversation with an assistant
+const conversation = await vibing.conversations.create({
+  assistant_id: 'asst_123456789',
+  metadata: {
+    user_id: 'user_987654321',
+    session_id: 'session_123'
+  }
+});
+
+// Add a message to the conversation
+await vibing.messages.create({
+  conversation_id: conversation.id,
+  role: 'user',
+  content: 'Hello, I need help with my recent order.'
+});
+
+// Run the conversation to get the assistant's response
+const run = await vibing.runs.create({
+  conversation_id: conversation.id
+});
+
+// Check run status and get results
+const runResult = await vibing.runs.retrieve(conversation.id, run.id);
+```
+
+## Specialized Assistant Types
+
+### Customer Support Assistants
+
+```typescript
+const supportAssistant = await vibing.assistants.create({
+  name: "Support Agent",
+  instructions: "You are a customer support agent. Help users troubleshoot problems, answer product questions, and document issues for the support team.",
+  metadata: {
+    department: "support",
+    product_knowledge: ["software", "hardware", "billing"]
+  }
+});
+```
+
+### Content Creation Assistants
+
+```typescript
+const contentAssistant = await vibing.assistants.create({
+  name: "Content Creator",
+  instructions: "You are a content creation assistant. Help users draft blog posts, social media content, and marketing copy. Suggest improvements and variations.",
+  metadata: {
+    expertise: ["blogging", "social_media", "copywriting"]
+  }
+});
+```
+
+### Research Assistants
+
+```typescript
+const researchAssistant = await vibing.assistants.create({
+  name: "Research Aid",
+  instructions: "You are a research assistant. Help users find information, summarize findings, and organize research notes.",
+  metadata: {
+    research_domains: ["academic", "market_research", "competitive_analysis"]
+  }
+});
+```
+
+## Working with Assistant Tools
+
+Assistants can be equipped with tools that extend their capabilities:
+
+```typescript
+const assistantWithTools = await vibing.assistants.create({
+  name: "Data Analyst",
+  instructions: "You are a data analysis assistant. Help users interpret data and generate insights.",
+  tools: [
+    {
+      type: "function",
+      function: {
+        name: "query_database",
+        description: "Query a database to retrieve specific data points",
+        parameters: {
+          type: "object",
+          properties: {
+            query: {
+              type: "string",
+              description: "SQL query to execute"
+            },
+            database: {
+              type: "string",
+              description: "Database to query"
+            }
+          },
+          required: ["query", "database"]
+        }
+      }
+    }
+  ]
+});
+```
+
+## Best Practices
+
+1. **Be specific with instructions** - The more detailed your instructions, the better your assistant will perform
+2. **Start simple, iterate often** - Begin with basic functionality and refine based on user interactions
+3. **Leverage metadata** - Use metadata to organize assistants and provide additional context
+4. **Combine with memory** - Use the memory system to create more personalized assistant experiences
+5. **Monitor performance** - Regularly review conversations to identify areas for improvement
+
+## Troubleshooting
+
+### Assistant Not Following Instructions
+
+If your assistant isn't behaving as expected:
+- Review and refine your instructions to be more specific
+- Break complex instructions into clear, separate points
+- Check if there are conflicting instructions or goals
+
+### Managing Context Limitations
+
+When dealing with lengthy conversations:
+- Use memory to store important information explicitly
+- Summarize previous interactions in new instructions
+- Create specialized assistants for different parts of a complex workflow
+
+## Next Steps
+
+Now that you understand assistants, explore:
+- [Memory Integration](/guides/memory) - Learn how to use memory to enhance your assistants
+- [Conversations](/guides/conversations) - Dive deeper into managing conversation flows
+- [Tools](/guides/tools) - Extend your assistants with custom tools and functions 

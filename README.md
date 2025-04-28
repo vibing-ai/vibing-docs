@@ -24,3 +24,11 @@ Changes will be deployed to production automatically after pushing to the main b
 
 - Mintlify dev isn't running - Run `mintlify install` it'll re-install dependencies.
 - Page loads as a 404 - Make sure you are running in a folder with `docs.json`
+
+---
+
+## Feedback & Analytics
+
+We value your feedback! If you have suggestions, spot issues, or want to request new documentation, please use the feedback widget on the docs site or email us at [docs@vibing.im](mailto:docs@vibing.im).
+
+We use privacy-respecting analytics to understand which docs are most helpful and to continuously improve the documentation experience. No personal data is collected.

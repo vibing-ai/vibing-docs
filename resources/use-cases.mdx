@@ -1,0 +1,567 @@
+---
+title: 'Use Cases'
+description: 'Real-world scenarios and implementation examples for Vibing AI'
+---
+
+# Use Cases
+
+Explore how businesses and developers are implementing Vibing AI to solve real-world problems. Each use case includes implementation strategy, key features, and code examples.
+
+## Customer Support Automation
+
+### Challenge
+A growing e-commerce company needed to reduce support ticket volume while maintaining high customer satisfaction. Their support team was spending too much time on repetitive inquiries.
+
+### Solution
+Implemented a Vibing AI-powered support assistant that can:
+- Answer common product questions
+- Process simple return requests
+- Collect information for complex cases before human handoff
+- Learn from past interactions to improve accuracy
+
+### Implementation Highlights
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+
+// Initialize the client
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+});
+
+// Create event handlers for customer conversations
+vibingClient.events.on('conversation.started', async (event) => {
+  const { conversation_id } = event.payload;
+  
+  // Get customer info if available
+  const customerInfo = await getCustomerInfoFromConversation(conversation_id);
+  
+  if (customerInfo) {
+    // Store relevant customer data for this conversation
+    await vibingClient.memory.store({
+      content: {
+        type: 'application/json',
+        data: {
+          customer_id: customerInfo.id,
+          order_history: customerInfo.recentOrders,
+          support_history: customerInfo.previousTickets
+        }
+      },
+      context: {
+        conversation_id,
+        source: 'customer_database'
+      },
+      tags: ['customer_context']
+    });
+  }
+  
+  // Send a personalized greeting
+  await vibingClient.messages.send({
+    conversation_id,
+    content: customerInfo 
+      ? `Welcome back, ${customerInfo.name}! How can I help you today?` 
+      : "Welcome to our support! How can I assist you today?",
+    sender: 'assistant'
+  });
+});
+
+// Process messages with intent detection
+vibingClient.events.on('conversation.message_received', async (event) => {
+  const { conversation_id, message } = event.payload;
+  
+  if (message.sender === 'user') {
+    // Detect intent of customer message
+    const intent = await detectIntent(message.content);
+    
+    switch (intent.type) {
+      case 'return_request':
+        // Start return workflow
+        startReturnWorkflow(conversation_id, intent.details);
+        break;
+      
+      case 'product_question':
+        // Search product knowledge base and respond
+        const answer = await searchProductKnowledge(intent.details.product_id, intent.details.question);
+        await vibingClient.messages.send({
+          conversation_id,
+          content: answer,
+          sender: 'assistant'
+        });
+        break;
+      
+      case 'complex_issue':
+        // Collect information before human handoff
+        await collectSupportInformation(conversation_id, intent.details);
+        break;
+        
+      default:
+        // General response
+        await vibingClient.messages.send({
+          conversation_id,
+          content: "I'd be happy to help with that. Could you provide more details?",
+          sender: 'assistant'
+        });
+    }
+  }
+});
+```
+
+### Results
+- 65% reduction in simple support tickets handled by human agents
+- 40% faster resolution time for complex issues
+- 92% customer satisfaction rate with AI assistant
+- Support team now focused on high-value customer interactions
+
+## Knowledge Management Platform
+
+### Challenge
+A large enterprise with thousands of internal documents, policies, and procedures struggled with knowledge fragmentation. Employees couldn't quickly find accurate information across multiple systems.
+
+### Solution
+Built a centralized knowledge platform using Vibing AI with:
+- Intelligent document ingestion and processing
+- Natural language search across all company resources
+- Personalized information access based on role and department
+- Active learning from user interactions and feedback
+
+### Implementation Highlights
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+import { processDocument } from './documentProcessing';
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+});
+
+// Document ingestion pipeline
+async function ingestDocumentLibrary(folderPath, metadata = {}) {
+  const files = await getFilesInFolder(folderPath);
+  
+  console.log(`Processing ${files.length} documents...`);
+  
+  for (const file of files) {
+    // Process document based on file type
+    const { documentId, sections } = await processDocument(file.path);
+    
+    // Store each section separately for granular retrieval
+    for (const section of sections) {
+      await vibingClient.memory.store({
+        content: {
+          type: section.type,
+          text: section.text,
+          data: section.data
+        },
+        context: {
+          document_id: documentId,
+          section_id: section.id,
+          section_type: section.type,
+          title: section.title,
+          path: file.path,
+          last_updated: file.lastModified,
+          ...metadata
+        },
+        tags: ['knowledge_base', ...file.tags, ...section.tags]
+      });
+    }
+    
+    console.log(`Processed ${file.path}`);
+  }
+}
+
+// Enhanced semantic search with context and permissions
+async function knowledgeSearch(query, user) {
+  // Get user's departments and access levels
+  const { departments, accessLevels } = await getUserPermissions(user.id);
+  
+  // Build access filters
+  const permissionFilters = {
+    $or: [
+      { 'context.access_level': { $in: accessLevels } },
+      { 'context.department': { $in: departments } },
+      { 'context.access_level': 'public' }
+    ]
+  };
+  
+  // Search with permissions
+  const results = await vibingClient.memory.searchText({
+    text: query,
+    filters: {
+      tags: 'knowledge_base',
+      ...permissionFilters
+    },
+    limit: 15
+  });
+  
+  // Post-process results for presentation
+  return results.data.map(item => ({
+    title: item.context.title,
+    content: item.content.text,
+    documentId: item.context.document_id,
+    lastUpdated: item.context.last_updated,
+    path: item.context.path,
+    relevance: item.score
+  }));
+}
+
+// Collect and process user feedback
+async function recordSearchFeedback(queryId, userId, feedback) {
+  await vibingClient.memory.store({
+    content: {
+      type: 'application/json',
+      data: {
+        query_id: queryId,
+        user_id: userId,
+        feedback_type: feedback.type,
+        comment: feedback.comment,
+        results_helpful: feedback.helpful
+      }
+    },
+    context: {
+      source: 'user_feedback',
+      timestamp: new Date().toISOString()
+    },
+    tags: ['feedback', 'search_quality']
+  });
+  
+  // Use feedback to improve future searches
+  if (feedback.notFoundInfo) {
+    await createKnowledgeGapRecord(feedback.notFoundInfo);
+  }
+}
+```
+
+### Results
+- 70% reduction in time spent searching for information
+- 85% of employees report finding more accurate information
+- 60% decrease in outdated information being used
+- Significant reduction in onboarding time for new employees
+
+## Financial Advisory Chatbot
+
+### Challenge
+A financial services firm wanted to provide personalized financial guidance to customers at scale, while ensuring compliance with regulations and accurate information.
+
+### Solution
+Created a Vibing AI-powered financial advisor that:
+- Provides personalized investment advice based on customer profiles
+- Explains complex financial concepts in simple terms
+- Maintains compliance with financial regulations
+- Integrates with existing customer data systems
+
+### Implementation Highlights
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+import { validateAdvice, checkCompliance } from './complianceTools';
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+});
+
+// Main financial advisor workflow
+const financialAdvisorWorkflow = vibingClient.workflows.create({
+  name: 'financial_advice',
+  
+  steps: [
+    // Step 1: Gather customer financial profile
+    {
+      id: 'collect_financial_profile',
+      handler: async (context, { proceed }) => {
+        const { conversation_id, user_id } = context;
+        
+        // Get existing profile or create new one
+        let profile = await getCustomerFinancialProfile(user_id);
+        
+        if (!profile.isComplete) {
+          // Collect missing information
+          profile = await collectFinancialInformation(conversation_id, profile);
+        }
+        
+        // Store updated profile
+        await vibingClient.memory.store({
+          content: {
+            type: 'application/json',
+            data: profile
+          },
+          context: {
+            user_id,
+            conversation_id
+          },
+          tags: ['financial_profile']
+        });
+        
+        return proceed({ profile });
+      }
+    },
+    
+    // Step 2: Generate advice
+    {
+      id: 'generate_advice',
+      handler: async (context, { proceed, fail }) => {
+        const { profile, conversation_id } = context;
+        
+        try {
+          // Get relevant financial products and advice
+          const recommendations = await generateFinancialRecommendations(profile);
+          
+          // Check compliance
+          const complianceCheck = await checkCompliance(recommendations, profile);
+          
+          if (!complianceCheck.approved) {
+            return fail({ 
+              error: 'compliance_violation',
+              details: complianceCheck.issues 
+            });
+          }
+          
+          // Send advice to customer
+          await vibingClient.messages.send({
+            conversation_id,
+            content: formatFinancialAdvice(recommendations),
+            sender: 'assistant'
+          });
+          
+          // Log the advice given for audit purposes
+          await logFinancialAdvice(profile.user_id, recommendations);
+          
+          return proceed({ recommendations });
+        } catch (error) {
+          return fail({ error: error.message });
+        }
+      }
+    },
+    
+    // Step 3: Handle follow-up questions
+    {
+      id: 'handle_followup',
+      handler: async (context) => {
+        const { conversation_id, recommendations } = context;
+        
+        // Set up listener for follow-up questions
+        const unsubscribe = vibingClient.events.on(
+          'conversation.message_received', 
+          async (event) => {
+            if (event.payload.conversation_id === conversation_id) {
+              const question = event.payload.message.content;
+              
+              // Generate explanation based on the specific question
+              const explanation = await generateFinancialExplanation(
+                question, 
+                recommendations
+              );
+              
+              // Validate the explanation for compliance
+              const validatedExplanation = await validateAdvice(explanation);
+              
+              // Send the response
+              await vibingClient.messages.send({
+                conversation_id,
+                content: validatedExplanation,
+                sender: 'assistant'
+              });
+            }
+          }
+        );
+        
+        // Keep the workflow active for a period to handle follow-ups
+        await new Promise(resolve => setTimeout(resolve, 30 * 60 * 1000)); // 30 minutes
+        
+        // Clean up
+        unsubscribe();
+        
+        return { status: 'completed' };
+      }
+    }
+  ],
+  
+  onError: async (error, context) => {
+    const { conversation_id } = context;
+    
+    if (error.error === 'compliance_violation') {
+      // Handle compliance issues by involving a human advisor
+      await notifyHumanAdvisor(conversation_id, error.details);
+      
+      await vibingClient.messages.send({
+        conversation_id,
+        content: "I need to connect you with a human financial advisor for this specific advice. They'll be with you shortly.",
+        sender: 'assistant'
+      });
+    } else {
+      // General error handling
+      await vibingClient.messages.send({
+        conversation_id,
+        content: "I apologize, but I'm having trouble processing your request. Let me connect you with a human advisor.",
+        sender: 'assistant'
+      });
+      
+      await logError(conversation_id, error);
+    }
+  }
+});
+
+// Start the financial advisor workflow
+async function startFinancialAdvisor(conversation_id, user_id) {
+  return await financialAdvisorWorkflow.start({
+    conversation_id,
+    user_id
+  });
+}
+```
+
+### Results
+- Provided financial guidance to 3x more customers
+- 92% accuracy in financial recommendations
+- 100% compliance with regulatory requirements
+- 78% of customers took action based on AI recommendations
+
+## Personalized Learning Platform
+
+### Challenge
+An educational technology company wanted to create a more adaptive learning experience that adjusts to each student's learning pace, preferences, and knowledge gaps.
+
+### Solution
+Developed a personalized learning platform using Vibing AI that:
+- Analyzes learning patterns and performance
+- Recommends customized learning paths
+- Generates practice questions at the appropriate difficulty level
+- Provides contextualized explanations and feedback
+
+### Implementation Highlights
+
+```typescript
+import { VibingAI } from '@vibing/sdk';
+import { assessKnowledgeLevel, generateQuestions } from './educationTools';
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+});
+
+// Track student learning and progress
+async function trackLearningProgress(studentId, topicId, activityData) {
+  // Store learning activity with context
+  await vibingClient.memory.store({
+    content: {
+      type: 'application/json',
+      data: {
+        activity_type: activityData.type,
+        score: activityData.score,
+        time_spent: activityData.duration,
+        questions_attempted: activityData.questions,
+        questions_correct: activityData.correct,
+        difficulty_level: activityData.level
+      }
+    },
+    context: {
+      student_id: studentId,
+      topic_id: topicId,
+      course_id: activityData.courseId,
+      timestamp: new Date().toISOString()
+    },
+    tags: ['learning_activity', activityData.type]
+  });
+  
+  // Update student knowledge model
+  await updateKnowledgeModel(studentId, topicId, activityData);
+}
+
+// Generate personalized learning recommendations
+async function getPersonalizedRecommendations(studentId) {
+  // Get student profile and knowledge model
+  const profile = await getStudentProfile(studentId);
+  const knowledgeModel = await getStudentKnowledgeModel(studentId);
+  
+  // Identify knowledge gaps and learning opportunities
+  const gaps = findKnowledgeGaps(knowledgeModel);
+  const strengths = findStrengthAreas(knowledgeModel);
+  
+  // Get learning style preferences
+  const learningStyle = await getLearningStylePreferences(studentId);
+  
+  // Generate recommendations based on student's unique situation
+  return {
+    nextTopics: generateTopicRecommendations(gaps, profile.courseProgress),
+    practiceAreas: gaps.map(gap => ({
+      topicId: gap.topicId,
+      title: gap.title,
+      confidenceLevel: gap.confidence,
+      recommendedActivities: generateActivities(gap, learningStyle)
+    })),
+    challengeAreas: strengths.map(strength => ({
+      topicId: strength.topicId,
+      title: strength.title,
+      advancedChallenges: generateAdvancedActivities(strength, learningStyle)
+    })),
+    learningPath: generateLearningPath(profile, knowledgeModel, profile.goals)
+  };
+}
+
+// Create custom practice session
+async function createPracticeSession(studentId, topicId) {
+  // Get current knowledge level
+  const knowledgeLevel = await assessKnowledgeLevel(studentId, topicId);
+  
+  // Generate appropriate questions
+  const questions = await generateQuestions(topicId, knowledgeLevel);
+  
+  // Create a new practice session
+  const sessionId = await createSession(studentId, topicId, questions);
+  
+  // Set up event listeners for student responses
+  vibingClient.events.on('practice.answer_submitted', async (event) => {
+    if (event.payload.session_id === sessionId) {
+      const { question_id, answer, time_taken } = event.payload;
+      
+      // Check answer
+      const result = await evaluateAnswer(question_id, answer);
+      
+      // Provide feedback
+      const feedback = await generateFeedback(
+        result.isCorrect, 
+        result.correctAnswer,
+        answer,
+        knowledgeLevel
+      );
+      
+      // Send feedback to student
+      await vibingClient.messages.send({
+        conversation_id: event.payload.conversation_id,
+        content: feedback,
+        sender: 'assistant'
+      });
+      
+      // Track this interaction for learning model
+      await trackLearningProgress(studentId, topicId, {
+        type: 'practice_question',
+        score: result.isCorrect ? 1 : 0,
+        duration: time_taken,
+        questions: 1,
+        correct: result.isCorrect ? 1 : 0,
+        level: knowledgeLevel
+      });
+    }
+  });
+  
+  return {
+    session_id: sessionId,
+    questions: questions.map(q => ({
+      id: q.id,
+      question: q.text,
+      options: q.options,
+      type: q.type
+    }))
+  };
+}
+```
+
+### Results
+- 40% improvement in learning outcomes
+- 35% reduction in time to master new concepts
+- 85% of students reported more engaging learning experience
+- 50% increase in student retention rates
+
+## Next Steps
+
+- [Code Samples](/resources/code-samples) - Explore practical implementation examples
+- [Best Practices](/resources/best-practices) - Learn recommended patterns and approaches
+- [API Reference](/api-reference/overview) - Explore the complete API documentation 

@@ -61,6 +61,12 @@
               "developer-guides/plugin-development",
               "developer-guides/agent-development"
             ]
+          },
+          {
+            "group": "Integration",
+            "pages": [
+              "developer-guides/api-integration"
+            ]
           }
         ]
       },
@@ -72,6 +78,13 @@
             "pages": [
               "api-reference/introduction",
               "api-reference/authentication"
+            ]
+          },
+          {
+            "group": "Core APIs",
+            "pages": [
+              "api-reference/memory-api",
+              "api-reference/event-system"
             ]
           },
           {

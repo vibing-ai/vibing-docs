@@ -1,0 +1,452 @@
+---
+title: 'Authentication'
+description: 'Learn how to implement authentication with Vibing AI'
+---
+
+# Authentication Guide
+
+This guide covers how to set up authentication for your Vibing AI applications, from API keys to user authentication flows.
+
+## API Key Authentication
+
+### Getting Your API Key
+
+1. Create an account at [dashboard.vibing.ai](https://dashboard.vibing.ai)
+2. Navigate to the API Keys section in your dashboard
+3. Generate a new API key
+
+There are two types of API keys:
+
+- **Test Keys**: Use these for development. They start with `vib_test_`.
+- **Production Keys**: Use these for live applications. They start with `vib_live_`.
+
+### Securing Your API Key
+
+Never expose your API key in client-side code. Instead:
+
+- For server-side applications: Use environment variables
+- For client-side applications: Use a backend proxy to make API calls
+
+#### Using Environment Variables
+
+```javascript
+// .env file
+VIBING_API_KEY=vib_live_xxxxxxxxxxxxx
+
+// server.js
+require('dotenv').config();
+const { VibingAI } = require('@vibing/sdk');
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY
+});
+```
+
+#### Using a Backend Proxy
+
+Create a simple server endpoint that makes Vibing AI API calls on behalf of your client:
+
+```javascript
+// server.js
+const express = require('express');
+const { VibingAI } = require('@vibing/sdk');
+require('dotenv').config();
+
+const app = express();
+app.use(express.json());
+
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY
+});
+
+app.post('/api/vibing/send-message', async (req, res) => {
+  try {
+    const { conversationId, message } = req.body;
+    const response = await vibingClient.messages.create({
+      conversation_id: conversationId,
+      content: message
+    });
+    res.json(response);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.listen(3000);
+```
+
+Then in your client code:
+
+```javascript
+// client.js
+async function sendMessage(conversationId, message) {
+  const response = await fetch('/api/vibing/send-message', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ conversationId, message })
+  });
+  return await response.json();
+}
+```
+
+## User Authentication
+
+There are several ways to integrate user authentication with Vibing AI:
+
+1. **Custom User IDs**: Assign your own user IDs and pass them to Vibing AI
+2. **JWT Authentication**: Use JSON Web Tokens for secure authentication
+3. **OAuth Integration**: Connect with third-party authentication providers
+
+### Using Custom User IDs
+
+You can associate conversations and memory items with your own user IDs:
+
+```javascript
+// After authenticating the user in your system
+const userId = 'user_12345'; // Your internal user ID
+
+// Create a conversation for this user
+const conversation = await vibingClient.conversations.create({
+  metadata: {
+    user_id: userId
+  }
+});
+
+// Store memory items for this user
+await vibingClient.memory.store({
+  content: {
+    type: 'text/plain',
+    data: 'User preference information'
+  },
+  context: {
+    user_id: userId
+  }
+});
+```
+
+### JWT Authentication
+
+For more secure user authentication, you can use JWT:
+
+1. **Set up JWT Generation**: Create a function to generate JWTs for authenticated users
+
+```javascript
+const jwt = require('jsonwebtoken');
+
+function generateVibingToken(userId) {
+  return jwt.sign(
+    { 
+      sub: userId,
+      metadata: {
+        // Additional user information
+        name: 'John Doe',
+        email: 'john@example.com'
+      }
+    },
+    process.env.VIBING_JWT_SECRET,
+    { 
+      expiresIn: '1h',
+      audience: 'vibing-api'
+    }
+  );
+}
+```
+
+2. **Initialize the Vibing Client with JWT**:
+
+```javascript
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+  auth: {
+    type: 'jwt',
+    token: generateVibingToken(userId)
+  }
+});
+```
+
+3. **Refresh JWT when needed**:
+
+```javascript
+// Check if token is about to expire and refresh
+function getUpdatedVibingClient(userId) {
+  const vibingClient = new VibingAI({
+    apiKey: process.env.VIBING_API_KEY,
+    auth: {
+      type: 'jwt',
+      token: generateVibingToken(userId)
+    }
+  });
+  
+  return vibingClient;
+}
+```
+
+### OAuth Integration
+
+You can integrate Vibing AI with your OAuth authentication flow:
+
+1. **Set up OAuth in your application** (e.g., with Auth0, Google, or your own OAuth server)
+2. **Exchange OAuth tokens for Vibing tokens**:
+
+```javascript
+// After OAuth authentication completes
+async function setupVibingWithOAuth(oauthToken) {
+  // Exchange OAuth token for Vibing token via your backend
+  const response = await fetch('/api/auth/exchange-token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: oauthToken })
+  });
+  
+  const { vibingToken } = await response.json();
+  
+  // Initialize Vibing client with the token
+  const vibingClient = new VibingAI({
+    apiKey: process.env.VIBING_API_KEY,
+    auth: {
+      type: 'oauth',
+      token: vibingToken
+    }
+  });
+  
+  return vibingClient;
+}
+```
+
+Your backend would handle the token exchange:
+
+```javascript
+// server.js
+app.post('/api/auth/exchange-token', async (req, res) => {
+  const { token } = req.body;
+  
+  // Validate the OAuth token
+  const userData = await validateOAuthToken(token);
+  
+  if (!userData) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+  
+  // Generate Vibing token
+  const vibingToken = generateVibingToken(userData.id);
+  
+  res.json({ vibingToken });
+});
+```
+
+## Multi-Tenant Applications
+
+For applications serving multiple organizations, you can implement tenant isolation:
+
+```javascript
+// Initialize a client for a specific tenant
+function getVibingClientForTenant(tenantId) {
+  return new VibingAI({
+    apiKey: process.env.VIBING_API_KEY,
+    tenant: tenantId
+  });
+}
+
+// Usage
+const tenantId = 'org_12345';
+const vibingClient = getVibingClientForTenant(tenantId);
+
+// Create a conversation for this tenant
+const conversation = await vibingClient.conversations.create({
+  metadata: {
+    tenant_id: tenantId
+  }
+});
+```
+
+## End-User Authentication
+
+If your application allows end-users to access Vibing AI directly, you can create authenticated sessions:
+
+```javascript
+// server.js
+app.post('/api/vibing/create-session', async (req, res) => {
+  // Authenticate the user in your system
+  const user = await authenticateUser(req.body.credentials);
+  
+  if (!user) {
+    return res.status(401).json({ error: 'Authentication failed' });
+  }
+  
+  // Create a session token for this user
+  const sessionToken = await vibingClient.auth.createSession({
+    user_id: user.id,
+    metadata: {
+      name: user.name,
+      email: user.email,
+      permissions: user.permissions
+    },
+    expires_in: 60 * 60 // 1 hour
+  });
+  
+  res.json({ sessionToken });
+});
+```
+
+Client-side usage:
+
+```javascript
+// client.js
+async function initializeVibingSession() {
+  // Get credentials from login form
+  const credentials = {
+    username: document.getElementById('username').value,
+    password: document.getElementById('password').value
+  };
+  
+  // Exchange credentials for session token
+  const response = await fetch('/api/vibing/create-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ credentials })
+  });
+  
+  const { sessionToken } = await response.json();
+  
+  // Initialize client-side Vibing client
+  const vibingClient = new VibingAI({
+    clientId: 'your-client-id', // Public client ID, not API key
+    auth: {
+      type: 'session',
+      token: sessionToken
+    }
+  });
+  
+  return vibingClient;
+}
+```
+
+## Role-Based Access Control
+
+Implement role-based access control for different user permissions:
+
+```javascript
+// Define roles and permissions
+const ROLES = {
+  ADMIN: 'admin',
+  MODERATOR: 'moderator',
+  USER: 'user'
+};
+
+const PERMISSIONS = {
+  READ_CONVERSATIONS: 'read:conversations',
+  CREATE_CONVERSATIONS: 'create:conversations',
+  DELETE_CONVERSATIONS: 'delete:conversations',
+  MANAGE_ASSISTANTS: 'manage:assistants'
+};
+
+// Role to permissions mapping
+const rolePermissions = {
+  [ROLES.ADMIN]: [
+    PERMISSIONS.READ_CONVERSATIONS,
+    PERMISSIONS.CREATE_CONVERSATIONS,
+    PERMISSIONS.DELETE_CONVERSATIONS,
+    PERMISSIONS.MANAGE_ASSISTANTS
+  ],
+  [ROLES.MODERATOR]: [
+    PERMISSIONS.READ_CONVERSATIONS,
+    PERMISSIONS.CREATE_CONVERSATIONS
+  ],
+  [ROLES.USER]: [
+    PERMISSIONS.READ_CONVERSATIONS,
+    PERMISSIONS.CREATE_CONVERSATIONS
+  ]
+};
+
+// Generate JWT with permissions
+function generateVibingTokenWithPermissions(userId, role) {
+  return jwt.sign(
+    { 
+      sub: userId,
+      permissions: rolePermissions[role] || rolePermissions[ROLES.USER]
+    },
+    process.env.VIBING_JWT_SECRET,
+    { expiresIn: '1h' }
+  );
+}
+
+// Usage
+const token = generateVibingTokenWithPermissions('user_123', ROLES.MODERATOR);
+const vibingClient = new VibingAI({
+  apiKey: process.env.VIBING_API_KEY,
+  auth: {
+    type: 'jwt',
+    token
+  }
+});
+```
+
+## Authentication with Webhooks
+
+When using webhooks, you need to verify the authenticity of incoming webhook requests:
+
+```javascript
+// server.js
+const crypto = require('crypto');
+
+app.post('/api/vibing/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['vibing-signature'];
+  
+  // Verify the signature
+  const payload = req.body;
+  const hmac = crypto.createHmac('sha256', process.env.VIBING_WEBHOOK_SECRET)
+    .update(payload)
+    .digest('hex');
+  
+  if (hmac !== signature) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+  
+  // Process the webhook
+  const event = JSON.parse(payload);
+  handleWebhookEvent(event);
+  
+  res.status(200).send('OK');
+});
+```
+
+## Best Practices
+
+1. **Never expose API keys**: Keep them secure in environment variables or a vault
+2. **Use short-lived tokens**: Set appropriate expiration times for JWTs and sessions
+3. **Implement token refresh**: Create a mechanism to refresh tokens before they expire
+4. **Apply the principle of least privilege**: Only grant necessary permissions
+5. **Use HTTPS**: Always secure your API endpoints with HTTPS
+6. **Validate all tokens**: Always verify signatures and expiration dates
+7. **Log authentication events**: Track login attempts, token generation, and usage
+8. **Implement rate limiting**: Protect against brute force attacks
+
+## Troubleshooting
+
+### Invalid API Key
+
+If you receive an "Invalid API Key" error:
+- Check that you're using the correct API key for your environment
+- Verify that the API key is properly set in your environment variables
+- Ensure the API key hasn't been deactivated in the dashboard
+
+### Expired Tokens
+
+If you're receiving "Token Expired" errors:
+- Implement automatic token refresh before expiration
+- Check system clock synchronization issues
+
+### Permission Denied
+
+If you're getting "Permission Denied" errors:
+- Verify that the user has the required permissions
+- Check that the correct roles are assigned
+- Ensure the JWT includes the necessary permission claims
+
+## Next Steps
+
+Now that you've set up authentication for your Vibing AI application, you might want to explore:
+
+- [Working with Conversations](/guides/conversations) - Learn how to create and manage conversations
+- [Memory Integration](/guides/memory) - Understand how to use memory for context
+- [Building Assistants](/guides/assistants) - Create custom AI assistants for your users 
